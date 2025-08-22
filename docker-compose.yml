@@ -6,5 +6,8 @@ services:
       - .env
     volumes:
       - .:/app
-    command: python app.py
+      - ./n8n_data:/home/node/.n8n
+    command: n8n
+    ports:
+      - "5678:5678"
     tty: true

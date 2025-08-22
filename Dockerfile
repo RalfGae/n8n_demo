@@ -8,7 +8,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Install Node.js 22.18.0 and npm 11.5.2
+# Install Node.js 22.18.0, npm 11.5.2, and n8n
 RUN apt-get update \
 	&& apt-get install -y curl \
 	&& curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
@@ -17,7 +17,8 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& npm install -g n \
 	&& n 22.18.0 \
-	&& npm install -g npm@11.5.2
+	&& npm install -g npm@11.5.2 \
+	&& npm install -g n8n
 
 # Copy project files
 COPY . .
@@ -26,4 +27,4 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 
 # Default command
-CMD ["python", "app.py"]
+CMD ["n8n"]
