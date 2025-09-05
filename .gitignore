@@ -1,5 +1,8 @@
 # n8n persistent data
 n8n_data/
+# persistent user data
+my-files/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
