@@ -1,10 +1,15 @@
 services:
   n8n:
-    image: n8nio/n8n:latest
+    image: my-n8n-custom
+    container_name: my-n8n
     ports:
       - "5678:5678"
     env_file:
       - .env
+    environment:
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - DB_SQLITE_POOL_SIZE=2
+      - N8N_RUNNERS_ENABLED=true
     volumes:
       - ./n8n_data:/home/node/.n8n
     tty: true

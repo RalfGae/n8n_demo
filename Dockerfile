@@ -1,19 +1,19 @@
 
-# Use official Node.js image
-FROM node:22.18.0-slim
+# Use official n8n image as base
+FROM n8nio/n8n:latest
 
+# --- Inherited from base image start ---
 # Set work directory
-WORKDIR /data
-
-# Install npm 11.5.2 and n8n
-RUN npm install -g npm@11.5.2 \
-	&& npm install -g n8n
-
+# WORKDIR /home/node
 # Expose n8n default port
-EXPOSE 5678
-
+# EXPOSE 5678
 # Set persistent data volume (optional, for documentation)
-VOLUME ["/home/node/.n8n"]
-
+# VOLUME ["/home/node/.n8n"]
 # Default command
-CMD ["n8n"]
+# CMD ["n8n"]
+# --- Inherited from base image end---
+
+# Install poppler-utils (for PDF processing)
+USER root
+RUN apk add --no-cache poppler-utils
+USER node
