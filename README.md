@@ -37,17 +37,19 @@ n8n_demo/
 ├── .env                   # Environment variables (not committed)
 ├── n8n_data/             # Persistent n8n data (workflows, settings)
 ├── my-files/             # File storage for workflows
-└── scripts/              # Custom Python scripts
-    ├── analyze_receipt_accuracy.py
-    ├── enhance_image.py
-    ├── enhance_image2.py
-    ├── enhance_image3.py
-    ├── enhance_image4.py
-    ├── enhance_image5.py
-    ├── log_error_invalid_receipt.py
-    ├── price_validator.py
-    ├── receipt_price_check.py
-    └── store_tolerance.py
+└── scripts/              # Custom Python scripts and utilities
+    ├── backup_n8n.sh                  # Automated backup script
+    ├── restore_n8n.sh                 # Restore script
+    ├── analyze_receipt_accuracy.py    # Receipt validation analytics
+    ├── enhance_image.py               # Basic image enhancement
+    ├── enhance_image2.py              # Advanced OpenCV enhancement
+    ├── enhance_image3.py              # PIL-based enhancement
+    ├── enhance_image4.py              # Receipt-specific processing
+    ├── enhance_image5.py              # Minimal processing
+    ├── log_error_invalid_receipt.py   # Error logging utility
+    ├── price_validator.py             # Receipt price validation
+    ├── receipt_price_check.py         # Price difference checker
+    └── store_tolerance.py             # Store-specific validation
 ```
 
 ## Setup
@@ -106,6 +108,31 @@ docker compose down
    python3 -c "import PIL; print(PIL.__version__)" # Pillow image library
    n8n --version                                   # n8n version
    ```
+
+## Backup & Restore
+
+The project includes automated backup scripts for protecting your n8n data:
+
+### Quick Backup
+```bash
+# Complete backup (recommended)
+./scripts/backup_n8n.sh
+
+# Database only (fastest)
+docker compose down
+cp n8n_data/database.sqlite "backup-$(date +%Y%m%d).sqlite"
+docker compose up -d
+```
+
+### Restore
+```bash
+./scripts/restore_n8n.sh backup-file.tar.gz [target-directory]
+```
+
+### Cloud Storage
+The backup script supports Google Drive, Dropbox, and AWS S3. Configure with rclone for automatic cloud uploads.
+
+**Backup sizes:** Database only (~50MB), Complete backup (~80-200MB compressed)
 
 ## Workflow Storage & Data Persistence
 - **n8n workflows**: Stored in `n8n_data/database.sqlite` (SQLite database)
@@ -166,6 +193,7 @@ The following environment variables are configured for optimal n8n performance:
 
 ## Recent Updates
 - **December 2025**: Upgraded to n8n v2.1.4 with enhanced Dockerfile
+- **Backup & Restore**: Added comprehensive backup scripts with cloud storage support
 - **Requirements.txt**: Updated with complete Python dependencies and version constraints
 - **Security Review**: Confirmed all scripts are safe for version control
 - **Enhanced Documentation**: Added Python dependencies section and security information
