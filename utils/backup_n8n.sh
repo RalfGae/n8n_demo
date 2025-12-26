@@ -4,8 +4,8 @@
 set -e
 
 # Configuration
-BACKUP_DIR="/tmp/n8n-backups"
 PROJECT_DIR="/home/rglinux/prj/n8n_demo"
+BACKUP_DIR="$PROJECT_DIR/backups"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 BACKUP_NAME="n8n-backup-${TIMESTAMP}"
 

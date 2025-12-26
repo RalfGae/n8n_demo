@@ -2,6 +2,8 @@
 n8n_data/
 # persistent user data
 my-files/
+# backup files
+backups/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -54,7 +54,16 @@ n8n_demo/
 
 ## Setup
 1. **Clone this repository**
-2. **Build the Docker image:**
+
+2. **Create environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+   Then edit `.env` and add your actual API keys:
+   - **OPENAI_API_KEY**: Get from [OpenAI Platform](https://platform.openai.com/api-keys)
+   - **GEMINI_API_KEY**: Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+3. **Build the Docker image:**
    ```bash
    docker build -t my-n8n-custom .
    ```
@@ -65,7 +74,7 @@ n8n_demo/
    - Python 3 with pip and Pillow
    - Conditional package installation (supports Alpine and Debian-based images)
 
-3. **Set up persistent storage:**
+4. **Set up persistent storage:**
    - The `docker-compose.yml` file maps volumes for persistent data:
      - `./n8n_data` → `/home/node/.n8n` (n8n workflows and settings)
      - `./scripts` → `/home/node/scripts` (custom Python scripts)
