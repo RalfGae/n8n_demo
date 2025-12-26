@@ -6,8 +6,8 @@ set -e
 # Configuration
 PROJECT_DIR="/home/rglinux/prj/n8n_demo"
 BACKUP_DIR="$PROJECT_DIR/backups"
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-BACKUP_NAME="n8n-backup-${TIMESTAMP}"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_NAME="n8n_backup_${TIMESTAMP}"
 
 # Create backup directory
 mkdir -p "$BACKUP_DIR"
@@ -60,6 +60,6 @@ echo "✅ Backup created: ${BACKUP_NAME}.tar.gz (${BACKUP_SIZE})"
 
 # Cleanup old local backups (keep last 5)
 echo "🧹 Cleaning up old local backups..."
-ls -t "$BACKUP_DIR"/n8n-backup-*.tar.gz | tail -n +6 | xargs -r rm
+ls -t "$BACKUP_DIR"/n8n_backup_*.tar.gz | tail -n +6 | xargs -r rm
 
 echo "🎉 Backup complete: $BACKUP_DIR/${BACKUP_NAME}.tar.gz"

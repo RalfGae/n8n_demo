@@ -35,11 +35,14 @@ n8n_demo/
 ├── README.md              # This file
 ├── requirements.txt       # Python dependencies
 ├── .env                   # Environment variables (not committed)
+├── .env.example           # Template for environment setup
 ├── n8n_data/             # Persistent n8n data (workflows, settings)
 ├── my-files/             # File storage for workflows
+├── backups/              # Backup archives (excluded from system backups)
+├── utils/                # Backup/restore utilities
+│   ├── backup_n8n.sh                  # Automated backup script
+│   └── restore_n8n.sh                 # Restore script with system backup
 └── scripts/              # Custom Python scripts and utilities
-    ├── backup_n8n.sh                  # Automated backup script
-    ├── restore_n8n.sh                 # Restore script
     ├── analyze_receipt_accuracy.py    # Receipt validation analytics
     ├── enhance_image.py               # Basic image enhancement
     ├── enhance_image2.py              # Advanced OpenCV enhancement
@@ -120,23 +123,37 @@ docker compose down
 
 ## Backup & Restore
 
-The project includes automated backup scripts for protecting your n8n data:
+The project includes automated backup scripts for protecting your n8n data with comprehensive safety features:
 
 ### Quick Backup
 ```bash
-# Complete backup (recommended)
-./scripts/backup_n8n.sh
+# Complete backup (recommended) - creates n8n_backup_YYYYMMDD_HHMMSS.tar.gz
+./utils/backup_n8n.sh
 
 # Database only (fastest)
 docker compose down
-cp n8n_data/database.sqlite "backup-$(date +%Y%m%d).sqlite"
+cp n8n_data/database.sqlite "backup_$(date +%Y%m%d).sqlite"
 docker compose up -d
 ```
 
-### Restore
+### Restore with System Backup Protection
 ```bash
-./scripts/restore_n8n.sh backup-file.tar.gz [target-directory]
+# Full restore with automatic system backup (RECOMMENDED)
+./utils/restore_n8n.sh backups/n8n_backup_YYYYMMDD_HHMMSS.tar.gz --test-and-replace
+
+# Extract backup for inspection/comparison only (does not restore system)
+./utils/restore_n8n.sh backups/n8n_backup_YYYYMMDD_HHMMSS.tar.gz
 ```
+
+**Restore Options Explained:**
+- **`--test-and-replace`** (Recommended): Complete restore workflow with safety mechanisms
+- **Extract-only**: Extracts backup to timestamped folder for inspection/debugging - manual work required
+
+**🔒 Safety Features (--test-and-replace mode):**
+- **Comprehensive System Backup**: Before any restore, creates `n8n_SYSTEM_COPY/` with complete current system state
+- **Test-and-Replace**: Validates backup integrity before applying changes
+- **Rollback Protection**: Complete system can be restored from `n8n_SYSTEM_COPY/` if restore fails
+- **Smart Exclusions**: Backups exclude `backups/` and `n8n_SYSTEM_COPY/` folders to prevent circular references
 
 ### Cloud Storage
 The backup script supports Google Drive, Dropbox, and AWS S3. Configure with rclone for automatic cloud uploads.
@@ -149,6 +166,7 @@ The backup script supports Google Drive, Dropbox, and AWS S3. Configure with rcl
 - **Configuration**: n8n settings in `n8n_data/config`
 - **Logs**: Application logs in `n8n_data/n8nEventLog*.log`
 - **Backup recommendation**: Always backup the entire `n8n_data/` folder
+- **System safety**: `n8n_SYSTEM_COPY/` contains complete system backup during restore operations (excluded from regular backups)
 
 ## Container Information
 - **Container Name**: `my-n8n`
@@ -202,11 +220,17 @@ The following environment variables are configured for optimal n8n performance:
 
 ## Recent Updates
 - **December 2025**: Upgraded to n8n v2.1.4 with enhanced Dockerfile
-- **Backup & Restore**: Added comprehensive backup scripts with cloud storage support
+- **Backup & Restore Enhancement**: 
+  - Added comprehensive backup scripts with cloud storage support
+  - Implemented `n8n_SYSTEM_COPY` safety mechanism for complete system rollback
+  - Unified naming convention: `n8n_backup_YYYYMMDD_HHMMSS.tar.gz`
+  - Smart exclusions: backups and system copies excluded from backup archives
+  - Test-and-replace workflow with automatic integrity validation
 - **Requirements.txt**: Updated with complete Python dependencies and version constraints
 - **Security Review**: Confirmed all scripts are safe for version control
 - **Enhanced Documentation**: Added Python dependencies section and security information
 - **Improved Dockerfile**: Added conditional package installation for better compatibility
+- **Utility Organization**: Moved backup/restore scripts to `utils/` directory
 
 ## License
 MIT (or specify your license)

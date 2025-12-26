@@ -4,11 +4,9 @@
 set -e
 
 # Configuration
-LOG_FILE="restore_$(date +%Y%m%d_%H%M%S).log"
 PROJECT_DIR="$(pwd)"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
-# Logging function
+# Logging function (log file will be set later after extracting backup timestamp)
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
@@ -19,11 +17,28 @@ if [ $# -eq 0 ]; then
     echo "Options:"
     echo "  $0 backup.tar.gz                    # Simple restore to timestamped folder"
     echo "  $0 backup.tar.gz --test-and-replace # Full workflow: extract -> test -> replace -> verify -> cleanup"
+    echo ""
+    echo "Examples:"
+    echo "  $0 backups/n8n_backup_20251226_143022.tar.gz"
+    echo "  $0 backups/n8n_backup_20251226_143022.tar.gz --test-and-replace"
     exit 1
 fi
 
 BACKUP_FILE="$1"
 MODE="${2:-simple}"
+
+# Extract timestamp from backup filename (format: n8n_backup_YYYYMMDD_HHMMSS.tar.gz)
+BACKUP_FILENAME=$(basename "$BACKUP_FILE")
+if [[ $BACKUP_FILENAME =~ n8n_backup_([0-9]{8}_[0-9]{6})\.tar\.gz ]]; then
+    BACKUP_TIMESTAMP="${BASH_REMATCH[1]}"
+    LOG_FILE="restore_${BACKUP_TIMESTAMP}.log"
+    log "📅 Using timestamp from backup: $BACKUP_TIMESTAMP"
+else
+    # Fallback to current timestamp if pattern doesn't match
+    BACKUP_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    LOG_FILE="restore_${BACKUP_TIMESTAMP}.log"
+    log "⚠️  Could not extract timestamp from filename, using current: $BACKUP_TIMESTAMP"
+fi
 
 # Verify backup file exists
 if [ ! -f "$BACKUP_FILE" ]; then
@@ -34,11 +49,34 @@ fi
 log "🔄 Starting n8n restore from backup: $BACKUP_FILE"
 log "📝 Log file: $LOG_FILE"
 
+# Create comprehensive system backup before any restore operation
+SYSTEM_BACKUP_DIR="${PROJECT_DIR}/n8n_SYSTEM_COPY"
+log "💾 Creating comprehensive system backup: $SYSTEM_BACKUP_DIR"
+
+# Remove existing system copy if it exists
+if [ -d "$SYSTEM_BACKUP_DIR" ]; then
+    log "🗑️  Removing previous system copy"
+    rm -rf "$SYSTEM_BACKUP_DIR"
+fi
+
+mkdir -p "$SYSTEM_BACKUP_DIR"
+
+# Copy ALL current files to system backup (not move - copy for safety)
+# Exclude backups folder to avoid unnecessary duplication
+for item in .env .env.example n8n_data scripts my-files docker-compose.yml Dockerfile README.md requirements.txt utils; do
+    if [ -e "$item" ]; then
+        cp -r "$item" "$SYSTEM_BACKUP_DIR/" 2>/dev/null || true
+        log "📦 Copied $item to system backup"
+    fi
+done
+
+log "✅ Complete system backup created"
+
 if [ "$MODE" = "--test-and-replace" ]; then
     log "🚀 Running FULL TEST & REPLACE workflow"
     
     # Step 1: Extract backup to test directory
-    TEST_DIR="${PROJECT_DIR}/n8n_restore_test_${TIMESTAMP}"
+    TEST_DIR="${PROJECT_DIR}/n8n_restore_test_${BACKUP_TIMESTAMP}"
     log "📦 Step 1: Extracting backup to test directory: $TEST_DIR"
     mkdir -p "$TEST_DIR"
     tar -xzf "$BACKUP_FILE" -C "$TEST_DIR"
@@ -103,16 +141,12 @@ if [ "$MODE" = "--test-and-replace" ]; then
     log "🛑 Stopping current n8n container"
     docker compose down 2>/dev/null || true
     
-    # Backup current files (safety measure)
-    SAFETY_BACKUP_DIR="${PROJECT_DIR}/safety_backup_${TIMESTAMP}"
-    log "💾 Creating safety backup of current files: $SAFETY_BACKUP_DIR"
-    mkdir -p "$SAFETY_BACKUP_DIR"
-    
-    # Move current files to safety backup
+    # Remove current files (we already have them safely backed up in n8n_SYSTEM_COPY)
+    log "🗑️  Removing current files (backed up in n8n_SYSTEM_COPY)"
     for item in .env n8n_data scripts my-files; do
         if [ -e "$item" ]; then
-            mv "$item" "$SAFETY_BACKUP_DIR/" 2>/dev/null || true
-            log "📦 Moved $item to safety backup"
+            rm -rf "$item" 2>/dev/null || true
+            log "�️  Removed $item"
         fi
     done
     
@@ -162,11 +196,20 @@ if [ "$MODE" = "--test-and-replace" ]; then
             docker compose logs
             
             # Rollback
-            log "🔙 Rolling back to safety backup"
+            log "🔙 Rolling back to complete system backup"
             docker compose down
-            rm -rf .env n8n_data scripts my-files
-            mv "$SAFETY_BACKUP_DIR"/* ./ 2>/dev/null || true
-            rmdir "$SAFETY_BACKUP_DIR"
+            
+            # Remove current files (preserve backups folder)
+            rm -rf .env n8n_data scripts my-files docker-compose.yml Dockerfile README.md requirements.txt utils 2>/dev/null || true
+            
+            # Restore complete system from n8n_SYSTEM_COPY
+            if [ -d "$SYSTEM_BACKUP_DIR" ]; then
+                cp -r "$SYSTEM_BACKUP_DIR"/* ./
+                log "✅ System successfully rolled back to n8n_SYSTEM_COPY"
+            else
+                log "❌ ERROR: System backup directory not found: $SYSTEM_BACKUP_DIR"
+            fi
+            
             exit 1
         fi
     else
@@ -177,20 +220,22 @@ if [ "$MODE" = "--test-and-replace" ]; then
     # Step 5: Cleanup
     log "🧹 Step 5: Cleaning up temporary files"
     rm -rf "$TEST_DIR"
-    rm -rf "$SAFETY_BACKUP_DIR"
+    log "📁 Preserving system backup: $SYSTEM_BACKUP_DIR (kept for safety)"
     log "✅ Cleanup complete"
     
     log "🎯 FULL RESTORE WORKFLOW COMPLETED SUCCESSFULLY!"
     log "📊 Summary:"
+    log "   - System backup created: ✅"
     log "   - Backup extracted and tested: ✅"
     log "   - Files replaced: ✅"  
     log "   - Instance verified: ✅"
     log "   - Cleanup completed: ✅"
+    log "🔒 System backup preserved at: $SYSTEM_BACKUP_DIR"
     log "🌐 n8n is available at: http://localhost:5678"
     
 else
     # Simple restore mode (original functionality)
-    TARGET_DIR="${PROJECT_DIR}/n8n_restored_$(date +%Y%m%d_%H%M%S)"
+    TARGET_DIR="${PROJECT_DIR}/n8n_restored_${BACKUP_TIMESTAMP}"
     log "📁 Simple restore to: $TARGET_DIR"
     
     mkdir -p "$TARGET_DIR"
@@ -213,69 +258,3 @@ else
 fi
 
 log "📝 Restore log saved to: $LOG_FILE"
-    
-    # Safety check - ensure we're in a valid n8n project directory
-    if [ ! -f "docker-compose.yml" ] && [ ! -f "Dockerfile" ]; then
-        echo "⚠️  Warning: This doesn't look like an n8n project directory"
-        echo "   (no docker-compose.yml or Dockerfile found)"
-        read -p "Continue anyway? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "❌ Restore cancelled"
-            exit 1
-        fi
-    fi
-    
-    # Create temporary extraction directory
-    TEMP_DIR=$(mktemp -d)
-    echo "📦 Extracting to temporary directory..."
-    tar -xzf "$BACKUP_FILE" -C "$TEMP_DIR"
-    
-    # Copy restored files to current directory
-    echo "📋 Copying restored files..."
-    cp -f "$TEMP_DIR"/.env . 2>/dev/null || echo "   .env not found in backup"
-    cp -rf "$TEMP_DIR"/n8n_data . 2>/dev/null || echo "   n8n_data not found in backup"
-    cp -rf "$TEMP_DIR"/scripts . 2>/dev/null || echo "   scripts not found in backup"
-    cp -rf "$TEMP_DIR"/my-files . 2>/dev/null || echo "   my-files not found in backup"
-    
-    # Clean up temp directory
-    rm -rf "$TEMP_DIR"
-    
-else
-    TARGET_DIR="${TARGET_OPTION:-$(pwd)/n8n_restored_$(date +%Y%m%d_%H%M%S)}"
-    echo "📁 Target directory: $TARGET_DIR"
-    
-    # Create target directory
-    mkdir -p "$TARGET_DIR"
-    
-    # Extract backup
-    echo "📦 Extracting backup..."
-    tar -xzf "$BACKUP_FILE" -C "$TARGET_DIR"
-fi
-
-# Set proper permissions
-echo "🔐 Setting permissions..."
-if [ "$TARGET_OPTION" = "--in-place" ]; then
-    chmod 600 .env 2>/dev/null || true
-    chmod -R 755 scripts/ 2>/dev/null || true
-    echo "✅ In-place restore complete!"
-    echo ""
-    echo "📋 Next steps:"
-    echo "1. docker compose up -d"
-    echo "2. Access n8n at http://localhost:5678"
-    echo ""
-    echo "📄 Files in current directory:"
-    ls -la | grep -E "\.(env|scripts|n8n_data|my-files)"
-else
-    chmod 600 "$TARGET_DIR"/.env 2>/dev/null || true
-    chmod -R 755 "$TARGET_DIR"/scripts/ 2>/dev/null || true
-    echo "✅ Restore complete!"
-    echo ""
-    echo "📋 Next steps:"
-    echo "1. cd $TARGET_DIR"
-    echo "2. docker compose up -d"
-    echo "3. Access n8n at http://localhost:5678"
-    echo ""
-    echo "📄 Files restored:"
-    ls -la "$TARGET_DIR"
-fi
