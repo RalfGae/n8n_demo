@@ -4,6 +4,8 @@ n8n_data/
 my-files/
 # backup files
 backups/
+# n8n workflow raw exports (contain sensitive values, never commit)
+workflows/*_raw.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
