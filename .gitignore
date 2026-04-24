@@ -4,8 +4,13 @@ n8n_data/
 my-files/
 # backup files
 backups/
+
 # n8n workflow raw exports (contain sensitive values, never commit)
 workflows/*_raw.json
+# Local workflow var mapping (contains sensitive values)
+utils/workflow_var_mapping.json
+# Temp export location
+/tmp/n8n_export/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
