@@ -1,0 +1,986 @@
+{
+  "name": "GdriveOcrReceipt mod",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "serviceAccount",
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "={{ $env.N8N_DRIVE_FOLDER_ID_UNSORTIERT }}",
+          "mode": "list",
+          "cachedResultName": "N8N_DRIVE_FOLDER_ID_UNSORTIERT",
+          "cachedResultUrl": "N8N_DRIVE_FOLDER_ID_UNSORTIERT"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        368
+      ],
+      "id": "af47a89f-abec-4dd0-821e-1a1aecde189d",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleApi": {
+          "id": "IE087Stw6nehyVnk",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Google Drive Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "fileName": "={{ $('Google Drive Trigger').item.json.name }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -16,
+        368
+      ],
+      "id": "1466ef34-b20d-4563-b87d-c9a0166ed747",
+      "name": "Download file",
+      "credentials": {
+        "googleApi": {
+          "id": "IE087Stw6nehyVnk",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "=data",
+        "options": {
+          "language": "eng",
+          "psm": "SPARSE_TEXT",
+          "outputBinary": true
+        }
+      },
+      "type": "n8n-nodes-tesseractjs.tesseractNode",
+      "typeVersion": 1,
+      "position": [
+        560,
+        336
+      ],
+      "id": "41fe80fd-4d56-433c-af4c-2e5044acde40",
+      "name": "Tesseract",
+      "executeOnce": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "=define",
+        "text": "=Extract the following information from this receipt:\n\nIMPORTANT: The total amount is usually prominently displayed and highlighted.  \nPay special attention to the final amount that was actually paid.\n\n1. RECEIPT_INFO:\n   - Date (formats: DD.MM.YYYY, MM/DD/YYYY, YYYY-MM-DD, DD.MM.YY)\n   - Store name (normalized: REWE, IKEA, ESSO, etc.)\n   - Currency (EUR, USD, etc.)\n   - Total amount (the actual amount paid)\n   - Tax amount (if recognizable)\n   - Subtotal (if available)\n\n2. INDIVIDUAL ITEMS:\n   - For each item: name, category, price, quantity\n   - Use specific categories (Food, Beverage, Household, Furniture, etc.)\n   - For unclear prices: estimate based on typical values\n   - If quantity is not specified, assume quantity = 1\n   - The number of items shall be equal to the number of item prices.\n   - For items sold by weight, only include the final price paid (e.g., \"Bananas (by weight)\" with the actual paid amount).\n   - Do not include reference prices (such as per-kilogram prices) as separate items if the actual purchase price is listed elsewhere on the receipt.\n   - If both a per-unit price and a total price for the same item appear, only include the total price as an item.\n   - If there is a mismatch of the total amount compared to the sum of individual item prices then check if there are very similar item names and check if the difference is close to one of the item prices.\n\nReturn the result as JSON according to the provided schema.  \nFocus on accuracy of the total amount as it's usually the most reliable value on receipts.\n\nOCR Text: {{ $json.text }}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1008,
+        -80
+      ],
+      "id": "10b17444-e799-4403-aa17-1a2b6f184a29",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        96
+      ],
+      "id": "402ab99b-2353-4a98-99dd-da3c660e3397",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "My4Bnh4g8Z04h3cM",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"title\": \"ReceiptValidation\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"receipt_info\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"date\": { \"type\": \"string\", \"format\": \"date\", \"title\": \"Receipt Date\" },\n        \"store\": { \"type\": \"string\", \"title\": \"Store Name\" },\n        \"currency\": { \"type\": \"string\", \"title\": \"Currency\" },\n        \"total_amount\": { \"type\": \"number\", \"title\": \"Total Amount on Receipt\" },\n        \"tax_amount\": { \"type\": \"number\", \"title\": \"Total Tax Amount\", \"default\": 0 },\n        \"subtotal\": { \"type\": \"number\", \"title\": \"Subtotal before tax\", \"default\": 0 }\n      },\n      \"required\": [\"date\", \"store\", \"currency\", \"total_amount\"]\n    },\n    \"items\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n           \"date\": { \"type\": \"string\", \"format\": \"date\", \"title\": \"Receipt Date\" },\n        \"store\": { \"type\": \"string\", \"title\": \"Store Name\" },\n        \"currency\": { \"type\": \"string\", \"title\": \"Currency\" },\n          \"category\": { \"type\": \"string\", \"title\": \"Item Category\" },\n          \"name\": { \"type\": \"string\", \"title\": \"Item Name\" },\n          \"price\": { \"type\": \"number\", \"title\": \"Item Price\" },\n          \"quantity\": { \"type\": \"number\", \"title\": \"Quantity\", \"default\": 1 }\n        },\n        \"required\": [\"date\", \"store\", \"currency\", \"category\", \"name\", \"price\"],\n        \"additionalProperties\": false\n      }\n    }\n  },\n  \"required\": [\"receipt_info\", \"items\"],\n  \"additionalProperties\": false\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        96
+      ],
+      "id": "ad75397d-f967-4675-a96c-edfa186c4582",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.N8N_NOTIFICATION_EMAIL }}",
+        "subject": "Addition of receipt to database",
+        "message": "=The following receipt itmes have been received and added to the sheet.\n\n{{ $json.store }}\n{{ $json.date }}\n{{ $json.price }} {{ $json.currency }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1872,
+        -80
+      ],
+      "id": "0b01fd30-ff7b-4b05-9345-6c6674cf4c66",
+      "name": "Send a message",
+      "webhookId": "8e37fcc8-a8ab-438b-9c03-c662da125308",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PNyXeGOIJ66dAoLf",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract the following information from this receipt:\n\nIMPORTANT: The total amount is usually prominently displayed and highlighted.  \nPay special attention to the final amount that was actually paid.\n\n1. RECEIPT_INFO:\n   - Date (formats: DD.MM.YYYY, MM/DD/YYYY, YYYY-MM-DD, DD.MM.YY)\n   - Store name (normalized: REWE, IKEA, ESSO, etc.)\n   - Currency (EUR, USD, etc.)\n   - Total amount (the actual amount paid)\n   - Tax amount (if recognizable)\n   - Subtotal (if available)\n\n2. INDIVIDUAL ITEMS:\n   - For each item: name, category, price, quantity\n   - Use specific categories (Food, Beverage, Household, Furniture, etc.)\n   - For unclear prices: estimate based on typical values\n   - If quantity is not specified, assume quantity = 1\n   - The number of items shall be equal to the number of item prices.\n   - For items sold by weight, only include the final price paid (e.g., \"Bananas (by weight)\" with the actual paid amount).\n   - Do not include reference prices (such as per-kilogram prices) as separate items if the actual purchase price is listed elsewhere on the receipt.\n   - If both a per-unit price and a total price for the same item appear, only include the total price as an item.\n   - If there is a mismatch of the total amount compared to the sum of individual item prices then check if there are very similar item names and check if the difference is close to one of the item prices.\n\nReturn the result as JSON according to the provided schema.  \nFocus on accuracy of the total amount as it's usually the most reliable value on receipts.\n\nyour task is to:\n* use the \"google sheet\" tool to place item specifig information into \"Einzelposten\" sheet, use commas instead for periods for price and numbers\n* use the \"google sheet\" tool to place receipt specifig information into \"Gesamtposten\" sheet, use commas instead for periods for price and numbers\n* send an email using the \"gmail\" tool with the updated receipt specific information\n\nOCR Text: {{ $json.text }}",
+        "options": {
+          "systemMessage": "You are an expert at extracting structured data from receipts using OCR text. Your task is to analyze the provided receipt text and return a JSON object according to the schema below. Focus on accuracy, especially for the total amount paid. Follow all instructions and schema requirements exactly.\n\nSchema:\n{\n  \"receipt_info\": {\n    \"date\": \"string (format: date)\",\n    \"store\": \"string\",\n    \"currency\": \"string\",\n    \"total_amount\": \"number\",\n    \"tax_amount\": \"number (default: 0)\",\n    \"subtotal\": \"number (default: 0)\"\n  },\n  \"items\": [\n    {\n      \"date\": \"string (format: date)\",\n      \"store\": \"string\",\n      \"currency\": \"string\",\n      \"category\": \"string\",\n      \"name\": \"string\",\n      \"price\": \"number\",\n    }\n  ]\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1072,
+        336
+      ],
+      "id": "9dbf589b-2f28-40cb-acf9-a5f8e8c5a0c5",
+      "name": "AI Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        512
+      ],
+      "id": "09f375a8-2e50-4456-9850-497e36f3df0f",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "My4Bnh4g8Z04h3cM",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.N8N_NOTIFICATION_EMAIL }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1456,
+        528
+      ],
+      "id": "bf69d7a6-1ece-480f-91b2-dbb12310a3af",
+      "name": "Send a message in Gmail",
+      "webhookId": "850f1696-ddd5-431f-9d06-4ed5754308fa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PNyXeGOIJ66dAoLf",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=python3 scripts/enhance_image5.py /files/PXL_20250910_094623809.jpg"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        160,
+        352
+      ],
+      "id": "f475fa59-a2c8-4744-aff6-281e0b24bf2b",
+      "name": "Execute Command"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $json.stdout }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        336,
+        352
+      ],
+      "id": "59882eff-7b69-4a68-b256-f620738fbfff",
+      "name": "Read/Write Files from Disk",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "errorMessage": "Could not write file to disk!"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        496,
+        528
+      ],
+      "id": "16f933a6-184e-4b0d-9dbe-0c6eae5baf1f",
+      "name": "Stop and Error | write file"
+    },
+    {
+      "parameters": {
+        "errorMessage": "OCR failled!"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        736,
+        528
+      ],
+      "id": "677ef232-46dd-462e-a45b-bc775e83e135",
+      "name": "Stop and Error | Tesseract"
+    },
+    {
+      "parameters": {
+        "errorMessage": "Download failed!"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        208,
+        528
+      ],
+      "id": "f22dbd12-d6ca-4971-a684-ead491232c9d",
+      "name": "Stop and Error | Download"
+    },
+    {
+      "parameters": {
+        "errorMessage": "AI Agent error!"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        432
+      ],
+      "id": "4ea29b87-a9cc-4452-b6ba-54ccaca0873f",
+      "name": "Stop and Error | AI Agent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9d5af176-5cc0-4730-b28b-345c568bf5da",
+              "leftValue": "={{ $json.confidence }}",
+              "rightValue": 56,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        320
+      ],
+      "id": "c8b24aad-36e4-4d45-b3e9-65015c46d01e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=output.items",
+        "include": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        -320
+      ],
+      "id": "0d008ea8-0af4-4c88-b346-a64ff65690d0",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_EINZELPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_EINZELPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_EINZELPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ $json[\"output.items\"].date }}",
+            "store": "={{ $json[\"output.items\"].store }}",
+            "category": "={{ $json[\"output.items\"].category }}",
+            "name": "={{ $json[\"output.items\"].name }}",
+            "price": "={{ $json[\"output.items\"].price }}",
+            "currency": "={{ $json[\"output.items\"].currency }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "store",
+              "displayName": "store",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1840,
+        -320
+      ],
+      "id": "37f884d9-1848-479d-9a05-221a9438c6ad",
+      "name": "Append items in sheet",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_GESAMTPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_GESAMTPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_GESAMTPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ $json.output.receipt_info.date }}",
+            "store": "={{ $json.output.receipt_info.store }}",
+            "price": "={{ $json.output.receipt_info.total_amount }}",
+            "currency": "={{ $json.output.receipt_info.currency }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "store",
+              "displayName": "store",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1680,
+        -80
+      ],
+      "id": "caffd492-2d2b-463a-8f38-2dfae43757ab",
+      "name": "Append receipt in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_GESAMTPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_GESAMTPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_GESAMTPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "store": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('store', ``, 'string') }}",
+            "price": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('price', ``, 'string') }}",
+            "currency": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('currency', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "store",
+              "displayName": "store",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        1200,
+        688
+      ],
+      "id": "4c5f3e4e-2acd-4f71-a5c3-462fd3759832",
+      "name": "Append receipt in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_EINZELPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_EINZELPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_EINZELPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "store": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('store', ``, 'string') }}",
+            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', ``, 'string') }}",
+            "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('name', ``, 'string') }}",
+            "price": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('price', ``, 'string') }}",
+            "currency": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('currency', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "store",
+              "displayName": "store",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        1312,
+        592
+      ],
+      "id": "289a877f-2ff1-469f-a27f-b4af79bff79d",
+      "name": "Append items in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error | Download",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tesseract": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error | Tesseract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append receipt in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Tesseract",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error | write file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Stop and Error | AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Append items in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append items in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Append receipt in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append receipt in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append items in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "AbaYcyWcPF2pAkxR"
+  },
+  "versionId": "498621df-e89e-475d-8ab0-8a3b336da68f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fa08a95d97b908c7e8fe6f3e73b8b6da3e4c7c396abd3bf5383d902979c227b9"
+  },
+  "id": "g4KKMVmQzKoFRAai",
+  "tags": []
+}

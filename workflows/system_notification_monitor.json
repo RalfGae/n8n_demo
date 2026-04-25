@@ -1,0 +1,193 @@
+{
+  "name": "System Notification Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Check Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "list",
+        "path": "/home/node/.n8n-files/logs"
+      },
+      "id": "read-logs-dir",
+      "name": "List Log Files",
+      "type": "n8n-nodes-base.filesReadWrite",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "filter-new-logs",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "backup_completed_|restore_|system_startup_",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-notifications",
+      "name": "Filter Notification Files",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "path": "={{ '/home/node/.n8n-files/logs/' + $json.name }}"
+      },
+      "id": "read-log-content",
+      "name": "Read Log Content",
+      "type": "n8n-nodes-base.filesReadWrite",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendTo": "your-email@example.com",
+        "subject": "🔔 n8n System Notification - {{ $('Read Log Content').item.json.fileName }}",
+        "message": "=Hi!\n\nA new system event occurred on your n8n server:\n\nFile: {{ $('Read Log Content').item.json.fileName }}\nTimestamp: {{ $now }}\n\n=== LOG CONTENT ===\n{{ $('Read Log Content').item.json.data }}\n\n=== END LOG ===\n\nBest regards,\nYour n8n System Monitor",
+        "options": {}
+      },
+      "id": "send-email",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1120,
+        300
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "smtp-credentials",
+          "name": "SMTP Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "sourcePath": "={{ '/home/node/.n8n-files/logs/' + $('Filter Notification Files').item.json.name }}",
+        "destinationPath": "={{ '/home/node/.n8n-files/logs/processed/' + $('Filter Notification Files').item.json.name }}"
+      },
+      "id": "move-processed",
+      "name": "Move to Processed",
+      "type": "n8n-nodes-base.filesReadWrite",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Check Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "List Log Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Log Files": {
+      "main": [
+        [
+          {
+            "node": "Filter Notification Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Notification Files": {
+      "main": [
+        [
+          {
+            "node": "Read Log Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Log Content": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Notification": {
+      "main": [
+        [
+          {
+            "node": "Move to Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "draft",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "n8n-system-monitor"
+  },
+  "id": "system-notification-monitor",
+  "tags": []
+}

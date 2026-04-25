@@ -1,0 +1,30 @@
+{
+  "description": "Mapping sensibler Werte auf Env-Variablen. Wird vom export-Script zum Sanitisieren genutzt. NICHT committen.",
+  "mappings": [
+    {
+      "env_var": "N8N_DRIVE_FOLDER_ID_UNSORTIERT",
+      "value": "your_folder_id_here",
+      "scope": "drive_folder"
+    },
+    {
+      "env_var": "N8N_SHEET_RECHNUNGEN_ID",
+      "value": "your_spreadsheet_id_here",
+      "scope": "sheet_document"
+    },
+    {
+      "env_var": "N8N_SHEET_EINZELPOSTEN_GID",
+      "value": "gid=0",
+      "scope": "sheet_gid"
+    },
+    {
+      "env_var": "N8N_SHEET_GESAMTPOSTEN_GID",
+      "value": "0",
+      "scope": "sheet_gid"
+    },
+    {
+      "env_var": "N8N_NOTIFICATION_EMAIL",
+      "value": "your@email.here",
+      "scope": "email"
+    }
+  ]
+}
