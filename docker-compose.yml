@@ -10,6 +10,10 @@ services:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - DB_SQLITE_POOL_SIZE=2
       - N8N_RUNNERS_ENABLED=true
+      # Allow workflows to access container env vars (single-user instance)
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      # Re-enable nodes that v2.0 disabled by default (Execute Command, Local File Trigger)
+      - NODES_EXCLUDE=[]
     volumes:
       - ./scripts:/home/node/scripts
       - ./n8n_data:/home/node/.n8n
