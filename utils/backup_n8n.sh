@@ -63,3 +63,28 @@ echo "🧹 Cleaning up old local backups..."
 ls -t "$BACKUP_DIR"/n8n_backup_*.tar.gz | tail -n +6 | xargs -r rm
 
 echo "🎉 Backup complete: $BACKUP_DIR/${BACKUP_NAME}.tar.gz"
+
+# Create backup completion notification for n8n workflows
+LOGS_DIR="$PROJECT_DIR/logs"
+if [ -d "$LOGS_DIR" ]; then
+    cat > "$LOGS_DIR/backup_completed_${TIMESTAMP}.log" << EOF
+=== BACKUP COMPLETION NOTIFICATION ===
+Timestamp: $(date '+%Y-%m-%d %H:%M:%S')
+Backup File: ${BACKUP_NAME}.tar.gz
+Backup Size: ${BACKUP_SIZE}
+Backup Location: $BACKUP_DIR/${BACKUP_NAME}.tar.gz
+Status: SUCCESS
+
+=== BACKUP CONTENTS ===
+$(tar -tzf "$BACKUP_DIR/${BACKUP_NAME}.tar.gz" | head -20)
+$([ "$(tar -tzf "$BACKUP_DIR/${BACKUP_NAME}.tar.gz" | wc -l)" -gt 20 ] && echo "... and $(($(tar -tzf "$BACKUP_DIR/${BACKUP_NAME}.tar.gz" | wc -l) - 20)) more files")
+
+=== SYSTEM INFO ===
+Host: $(hostname)
+Available Space: $(df -h "$BACKUP_DIR" | tail -1 | awk '{print "Used: " $3 " Available: " $4 " (" $5 " full)"}')
+Total Backups: $(ls -1 "$BACKUP_DIR"/n8n_backup_*.tar.gz 2>/dev/null | wc -l)
+
+=== END NOTIFICATION ===
+EOF
+    echo "📧 Backup notification created for n8n workflows"
+fi

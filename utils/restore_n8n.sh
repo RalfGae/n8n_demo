@@ -258,3 +258,9 @@ else
 fi
 
 log "📝 Restore log saved to: $LOG_FILE"
+
+# Copy log file to n8n accessible directory for workflow notifications
+if [ -d "logs" ]; then
+    cp "$LOG_FILE" "logs/" 2>/dev/null || true
+    log "📧 Restore log copied to logs/ for n8n workflow access"
+fi
