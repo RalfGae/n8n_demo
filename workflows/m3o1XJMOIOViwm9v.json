@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-27T12:07:31.861Z",
+  "updatedAt": "2026-04-27T12:47:55.085Z",
   "createdAt": "2026-04-27T11:56:37.119Z",
   "id": "m3o1XJMOIOViwm9v",
   "name": "Error Handler",
@@ -57,7 +57,10 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Berlin",
+    "callerPolicy": "workflowsFromSameOwner"
   },
   "staticData": null,
   "meta": {
@@ -66,7 +69,7 @@
   "pinData": {},
   "versionId": "85a154d5-d5cb-465f-ba3c-b34733610186",
   "activeVersionId": "f54dc5b9-7ebe-4206-a0d7-00a960d06525",
-  "versionCounter": 6,
+  "versionCounter": 9,
   "triggerCount": 0,
   "tags": []
 }
