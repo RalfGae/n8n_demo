@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-27T12:03:24.812Z",
+  "updatedAt": "2026-04-27T19:16:58.187Z",
   "createdAt": "2026-04-25T11:51:33.346Z",
   "id": "QOlE6hpQyNm2RUIj",
   "name": "Receipt Processor v1.2 — Phase 3",
@@ -75,7 +75,7 @@
     {
       "parameters": {
         "promptType": "=define",
-        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Date (formats DD.MM.YYYY, MM/DD/YYYY, YYYY-MM-DD, DD.MM.YY)\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal (if printed on the receipt; if not, calculate it as the sum of all\n   item prices)                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n                                                                                  \n  Return the result as JSON matching the provided schema.",
+        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Date (formats DD.MM.YYYY, MM/DD/YYYY, YYYY-MM-DD, DD.MM.YY)\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal (if printed on the receipt; if not, calculate it as the sum of all\n   item prices)                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n                                                                                  \n  Return the result as JSON matching the provided schema.",
         "hasOutputParser": true,
         "messages": {
           "messageValues": [
@@ -656,16 +656,16 @@
   },
   "staticData": {
     "node:Google Drive Trigger": {
-      "lastTimeChecked": "2026-04-27T12:09:35Z"
+      "lastTimeChecked": "2026-04-27T19:04:23Z"
     }
   },
   "meta": {
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "fb5224a4-6805-475d-ac5b-27463a3fa9ed",
+  "versionId": "3fcd9520-83ae-4e32-96e0-4107bee45148",
   "activeVersionId": "fb5224a4-6805-475d-ac5b-27463a3fa9ed",
-  "versionCounter": 37,
+  "versionCounter": 40,
   "triggerCount": 1,
   "tags": []
 }

@@ -98,6 +98,8 @@ Raw exports (`*_raw.json`) are gitignored. Only sanitized versions are committed
 
 `receipt_id` is the Google Drive file ID — use it to join the two sheets and to navigate back to the original file.
 
+**Language convention:** item names are always translated to English regardless of the receipt language (German, Asian scripts, etc.). Categories use a controlled English vocabulary (Food, Beverage, Household, etc.).
+
 ## pdf-converter service
 
 Converts PDF pages to JPEG using poppler-utils. Internal service, not exposed outside the Docker network.
