@@ -1,5 +1,6 @@
 services:
   n8n:
+    build: .
     image: my-n8n-custom
     container_name: my-n8n
     ports:
@@ -14,9 +15,19 @@ services:
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
       # Re-enable nodes that v2.0 disabled by default (Execute Command, Local File Trigger)
       - NODES_EXCLUDE=[]
+      # Allow Code Nodes to use pdfjs-dist and @napi-rs/canvas (for PDF->JPG conversion)
+      # does not work, pdfjs is blocking n8n startup
+      # - NODE_FUNCTION_ALLOW_EXTERNAL=pdfjs-dist,@napi-rs/canvas
     volumes:
       - ./scripts:/home/node/scripts
       - ./n8n_data:/home/node/.n8n
       - ./my-files:/files
       - ./logs:/home/node/.n8n-files/logs
     tty: true
+
+  pdf-converter:
+    build: ./pdf-converter
+    container_name: pdf-converter
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
