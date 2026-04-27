@@ -1,10 +1,10 @@
 {
-  "updatedAt": "2026-04-27T11:44:14.706Z",
+  "updatedAt": "2026-04-27T12:03:24.812Z",
   "createdAt": "2026-04-25T11:51:33.346Z",
   "id": "QOlE6hpQyNm2RUIj",
   "name": "Receipt Processor v1.2 — Phase 3",
   "description": null,
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -650,17 +650,22 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "errorWorkflow": "AbaYcyWcPF2pAkxR",
-    "availableInMCP": false
+    "errorWorkflow": "m3o1XJMOIOViwm9v",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed"
   },
-  "staticData": null,
+  "staticData": {
+    "node:Google Drive Trigger": {
+      "lastTimeChecked": "2026-04-27T12:09:35Z"
+    }
+  },
   "meta": {
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
   "versionId": "fb5224a4-6805-475d-ac5b-27463a3fa9ed",
-  "activeVersionId": null,
-  "versionCounter": 31,
-  "triggerCount": 0,
+  "activeVersionId": "fb5224a4-6805-475d-ac5b-27463a3fa9ed",
+  "versionCounter": 37,
+  "triggerCount": 1,
   "tags": []
 }

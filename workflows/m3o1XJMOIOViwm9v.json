@@ -1,0 +1,72 @@
+{
+  "updatedAt": "2026-04-27T12:07:31.861Z",
+  "createdAt": "2026-04-27T11:56:37.119Z",
+  "id": "m3o1XJMOIOViwm9v",
+  "name": "Error Handler",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "67d8ddf4-39f9-42dd-8c43-2ff0b7bb75eb",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.N8N_NOTIFICATION_EMAIL }} ",
+        "subject": "=n8n Error: {{ $json.workflow.name }}",
+        "message": "=Workflow: {{ $json.workflow.name }}<br>\nExecution ID: {{ $json.execution.id }}<br>\nLast Node: {{ $json.execution.lastNodeExecuted }}<br>\nError: {{ $json.execution.error.message }}<br>\n<br>                                                               View: http://localhost:5678/workflow/{{ $json.workflow.id }}/executions/{{ $json.execution.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3c49d265-be93-4572-953e-c2b11a31768b",
+      "name": "Send a message",
+      "webhookId": "1c5b24cf-de20-4f1e-860f-c32c505a4368",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PNyXeGOIJ66dAoLf",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "85a154d5-d5cb-465f-ba3c-b34733610186",
+  "activeVersionId": "f54dc5b9-7ebe-4206-a0d7-00a960d06525",
+  "versionCounter": 6,
+  "triggerCount": 0,
+  "tags": []
+}
