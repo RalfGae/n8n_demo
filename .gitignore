@@ -48,3 +48,7 @@ logs/*
 
 # Test samples (real receipts - personal data, never commit)
 test_samples/
+
+# Planning and handover documents
+*_BRIEFING_FOR_CLAUDE_CODE.md
+CONTEXT_FOR_CLAUDE_CODE.md
