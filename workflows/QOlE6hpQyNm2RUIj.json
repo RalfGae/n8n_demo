@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-28T19:22:51.217Z",
+  "updatedAt": "2026-04-28T20:41:41.234Z",
   "createdAt": "2026-04-25T11:51:33.346Z",
   "id": "QOlE6hpQyNm2RUIj",
   "name": "Receipt Processor v1.2 — Phase 3",
@@ -75,7 +75,7 @@
     {
       "parameters": {
         "promptType": "=define",
-        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Date (DD.MM.YYYY preferred; also handles MM/DD/YYYY, YYYY-MM-DD, DD.MM.YY). Output\n  always as DD.MM.YYYY.\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal (if printed on the receipt; if not, calculate it as the sum of all\n   item prices)                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n\n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork\n                                                                                  \n  Return the result as JSON matching the provided schema.",
+        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Always output dates in ISO format (YYYY-MM-DD).\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal (if printed on the receipt; if not, calculate it as the sum of all\n   item prices)                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n\n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork\n                                                                                  \n  Return the result as JSON matching the provided schema.",
         "hasOutputParser": true,
         "messages": {
           "messageValues": [
@@ -394,7 +394,7 @@
             {
               "id": "f08f2266-38a4-4394-aeef-4b3843aeb98a",
               "name": "date",
-              "value": "={{ $json.output.receipt_info.date }}",
+              "value": "={{ DateTime.fromISO($json.output.receipt_info.date).toFormat('dd.MM.yyyy') }}",
               "type": "string"
             },
             {
@@ -669,9 +669,9 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "f71a1a7b-2198-4518-a463-dec68f6546eb",
+  "versionId": "cf91a02e-a989-4702-9365-7667a8338471",
   "activeVersionId": "fb5224a4-6805-475d-ac5b-27463a3fa9ed",
-  "versionCounter": 51,
+  "versionCounter": 53,
   "triggerCount": 1,
   "tags": []
 }

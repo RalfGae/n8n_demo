@@ -1,10 +1,10 @@
 {
-  "updatedAt": "2026-04-28T19:22:23.763Z",
+  "updatedAt": "2026-04-28T20:40:48.079Z",
   "createdAt": "2026-04-27T19:25:13.013Z",
   "id": "UigcQtXyleXGTRvM",
   "name": "Bulk Import",
   "description": null,
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -87,7 +87,8 @@
           "id": "IE087Stw6nehyVnk",
           "name": "Google Drive account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -149,8 +150,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        880,
-        -368
+        896,
+        -432
       ],
       "id": "f6442049-683d-4058-8d85-a62497f70076",
       "name": "HTTP Request"
@@ -158,7 +159,7 @@
     {
       "parameters": {
         "promptType": "=define",
-        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Date (DD.MM.YYYY preferred; also handles MM/DD/YYYY, YYYY-MM-DD, DD.MM.YY). Output\n  always as DD.MM.YYYY.\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal (if printed on the receipt; if not, calculate it as the sum of all\n   item prices)                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n  \n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork                                                                                \n  Return the result as JSON matching the provided schema.",
+        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Always output dates in ISO format (YYYY-MM-DD).\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal (if printed on the receipt; if not, calculate it as the sum of all\n   item prices)                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n  \n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork                                                                                \n  Return the result as JSON matching the provided schema.",
         "hasOutputParser": true,
         "messages": {
           "messageValues": [
@@ -315,7 +316,7 @@
             {
               "id": "f08f2266-38a4-4394-aeef-4b3843aeb98a",
               "name": "date",
-              "value": "={{ $json.output.receipt_info.date }}",
+              "value": "={{ DateTime.fromISO($json.output.receipt_info.date).toFormat('dd.MM.yyyy') }}",
               "type": "string"
             },
             {
@@ -488,21 +489,6 @@
     },
     {
       "parameters": {
-        "aggregate": "aggregateAllItemData",
-        "destinationFieldName": "files",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.aggregate",
-      "typeVersion": 1,
-      "position": [
-        -240,
-        -608
-      ],
-      "id": "d04e38aa-296f-4bc9-95d4-fc3124cfd9a7",
-      "name": "Aggregate"
-    },
-    {
-      "parameters": {
         "documentId": {
           "__rl": true,
           "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
@@ -537,7 +523,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const files = $('Aggregate files').first().json.files;\nconst sheetRows = $input.all().map(item => item.json);\nconst existingIds = new Set(\n  sheetRows.map(r => r.receipt_id).filter(id => !!id)\n);\nconst force = !!$('On form submission').first().json['Force reprocess'];\nconst toProcess = force ? files : files.filter(f => !existingIds.has(f.id));\nreturn toProcess.map(f => ({ json: f }));"
+        "jsCode": "const files = $('Aggregate files').first().json.files;\nconst sheetRows = $input.all().map(item => item.json);\nconst existingIds = new Set(\n  sheetRows.map(r => r.receipt_id).filter(id => !!id)\n);\nconst force = !!$('On form submission').first().json['Force reprocess'];\nconst toProcess = force ? files : files.filter(f => !existingIds.has(f.id));\nconst filteredToProcess = toProcess.filter(f =>\n  !f.mimeType?.startsWith('application/vnd.google-apps.'));\nreturn filteredToProcess.map(f => ({ json: f }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -547,6 +533,21 @@
       ],
       "id": "e51e9b07-5474-49f9-ac2d-13fb8a8768d5",
       "name": "Filter new files"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "files",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -608
+      ],
+      "id": "d04e38aa-296f-4bc9-95d4-fc3124cfd9a7",
+      "name": "Aggregate files"
     }
   ],
   "connections": {
@@ -565,7 +566,7 @@
       "main": [
         [
           {
-            "node": "Aggregate",
+            "node": "Aggregate files",
             "type": "main",
             "index": 0
           }
@@ -694,17 +695,6 @@
         ]
       ]
     },
-    "Aggregate": {
-      "main": [
-        [
-          {
-            "node": "Get all sheet rows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Filter new files": {
       "main": [
         [
@@ -715,20 +705,35 @@
           }
         ]
       ]
+    },
+    "Aggregate files": {
+      "main": [
+        [
+          {
+            "node": "Get all sheet rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Berlin",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "m3o1XJMOIOViwm9v"
   },
   "staticData": null,
   "meta": {
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "b55815fe-6625-4602-9d70-2cabee7b0689",
-  "activeVersionId": null,
-  "versionCounter": 32,
-  "triggerCount": 0,
+  "versionId": "a5f3e15d-a6e2-4a9f-bf4d-ec1bfce9e7a2",
+  "activeVersionId": "964f8395-5f56-49c9-b005-be283913bc76",
+  "versionCounter": 46,
+  "triggerCount": 1,
   "tags": []
 }
