@@ -1,0 +1,728 @@
+{
+  "updatedAt": "2026-04-28T18:43:35.506Z",
+  "createdAt": "2026-04-27T19:25:13.013Z",
+  "id": "UigcQtXyleXGTRvM",
+  "name": "Bulk Import",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Bulk Import",
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "Folder ID",
+              "fieldLabel": "Which folder do you want to process?",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.4,
+      "position": [
+        -656,
+        -384
+      ],
+      "id": "7a56f719-e7a6-46a7-b216-7bd617332370",
+      "name": "On form submission",
+      "webhookId": "100f7060-867f-49f1-8da1-f1dfb6590fa8"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "resource": "fileFolder",
+        "queryString": "=",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "={{ $json[\"Folder ID\"] }}",
+            "mode": "id"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -448,
+        -384
+      ],
+      "id": "c2b8c222-4aa8-4b60-b15b-892a9a309920",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleApi": {
+          "id": "IE087Stw6nehyVnk",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "fileName": "={{ $json.name }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        512,
+        -224
+      ],
+      "id": "50c00f4f-5046-435b-9bc1-f0f75afdf850",
+      "name": "Download file",
+      "credentials": {
+        "googleApi": {
+          "id": "IE087Stw6nehyVnk",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d8a15269-c5f9-4485-a48c-0d41334536ca",
+              "leftValue": "={{ $binary.data.mimeType }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        -224
+      ],
+      "id": "af7db9a6-4b1b-40fb-933b-73034b9780db",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://pdf-converter:8000/convert",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        880,
+        -368
+      ],
+      "id": "f6442049-683d-4058-8d85-a62497f70076",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "=define",
+        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Date (formats DD.MM.YYYY, MM/DD/YYYY, YYYY-MM-DD, DD.MM.YY)\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal (if printed on the receipt; if not, calculate it as the sum of all\n   item prices)                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n                                                                                  \n  Return the result as JSON matching the provided schema.",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "messageType": "imageBinary",
+              "imageDetail": "high"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1136,
+        -320
+      ],
+      "id": "72bc3b61-23c7-4080-99ae-5ee75d361c0b",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        -144
+      ],
+      "id": "e28da108-a493-4ede-ad34-cbe3f1f3f134",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "My4Bnh4g8Z04h3cM",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{                                                                               \n    \"title\": \"ReceiptValidation\",                                                 \n    \"type\": \"object\",                                                             \n    \"properties\": {                                         \n      \"receipt_info\": {                                                           \n        \"type\": \"object\",                                   \n        \"properties\": {\n          \"date\": { \"type\": \"string\", \"format\": \"date\", \"title\": \"Receipt Date\" },\n          \"store\": { \"type\": \"string\", \"title\": \"Store Name\" },                   \n          \"currency\": { \"type\": \"string\", \"title\": \"Currency\" },                  \n          \"total_amount\": { \"type\": \"number\", \"title\": \"Total Amount on Receipt\"  \n  },                                                                              \n          \"tax_amount\": { \"type\": \"number\", \"title\": \"Total Tax Amount\",\n  \"default\": 0 },                                                                 \n          \"subtotal\": { \"type\": \"number\", \"title\": \"Subtotal before tax\",\n  \"default\": 0 },                                                                 \n          \"deposits\": { \"type\": \"number\", \"title\": \"Deposit charges (Pfand)\",\n  \"default\": 0 },                                                                 \n          \"discounts\": { \"type\": \"number\", \"title\": \"Discounts and coupons\",\n  \"default\": 0 }                                                                  \n        },                                                  \n        \"required\": [\"date\", \"store\", \"currency\", \"total_amount\"]                 \n      },                                                                          \n      \"items\": {\n        \"type\": \"array\",                                                          \n        \"items\": {                                          \n          \"type\": \"object\",\n          \"properties\": {\n            \"category\": { \"type\": \"string\", \"title\": \"Item Category\" },\n            \"name\": { \"type\": \"string\", \"title\": \"Item Name\" },                   \n            \"price\": { \"type\": \"number\", \"title\": \"Item Price\" },\n            \"quantity\": { \"type\": \"number\", \"title\": \"Quantity\", \"default\": 1 }   \n          },                                                \n          \"required\": [\"category\", \"name\", \"price\"],                              \n          \"additionalProperties\": false                                           \n        }\n      }                                                                           \n    },                                                      \n    \"required\": [\"receipt_info\", \"items\"],\n    \"additionalProperties\": false\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        -144
+      ],
+      "id": "224966a2-c3f0-4aff-9daa-ee8c5e942ac6",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_GESAMTPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_GESAMTPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_GESAMTPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "date": "={{ $json.output.receipt_info.date }}",
+            "store": "={{ $json.output.receipt_info.store }}",
+            "price": "={{ $json.output.receipt_info.total_amount }}",
+            "currency": "={{ $json.output.receipt_info.currency }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "store",
+              "displayName": "store",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1616,
+        -320
+      ],
+      "id": "a5fed2d0-ff6c-4612-aeab-63f24820fe76",
+      "name": "Append receipt in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c7deabdc-f194-4f18-ad73-55192dfefe4f",
+              "name": "receipt_id",
+              "value": "={{ $('Filter new files').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f08f2266-38a4-4394-aeef-4b3843aeb98a",
+              "name": "date",
+              "value": "={{ $json.output.receipt_info.date }}",
+              "type": "string"
+            },
+            {
+              "id": "7c62bb5c-03cf-4a0d-9c52-262648c16486",
+              "name": "store",
+              "value": "={{ $json.output.receipt_info.store }}",
+              "type": "string"
+            },
+            {
+              "id": "a76ab2f2-29db-4cd0-9ba8-2ec38f66ed56",
+              "name": "currency",
+              "value": "={{ $json.output.receipt_info.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "a7ff4ff1-a50f-4f82-9504-19b386bd4c72",
+              "name": "total_amount",
+              "value": "={{ Number($json.output.receipt_info.total_amount) }}",
+              "type": "string"
+            },
+            {
+              "id": "7d3e559a-c11d-4b7c-bcb0-0c20d5d44c79",
+              "name": "tax_amount",
+              "value": "={{ Number($json.output.receipt_info.tax_amount) }}",
+              "type": "string"
+            },
+            {
+              "id": "56baf7a2-a02c-441f-a245-55f63027fe34",
+              "name": "subtotal",
+              "value": "={{ Number($json.output.receipt_info.subtotal) }}",
+              "type": "string"
+            },
+            {
+              "id": "0f150278-f4d5-44cd-871c-427a0e8269c3",
+              "name": "deposits",
+              "value": "={{ Number($json.output.receipt_info.deposits) }}",
+              "type": "string"
+            },
+            {
+              "id": "244706af-bd07-4006-9329-3e258af04e36",
+              "name": "discounts",
+              "value": "={{ Number($json.output.receipt_info.discounts) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        -320
+      ],
+      "id": "06849faa-fa2a-410e-ab35-017d685991ca",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=output.items",
+        "include": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        -528
+      ],
+      "id": "dbf2943e-cda4-42ce-8a9d-121de4525961",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_EINZELPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_EINZELPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_EINZELPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1760,
+        -528
+      ],
+      "id": "a9e017d0-9af2-4b0b-ad8b-19ae80fefdba",
+      "name": "Append items in sheet",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ce43264a-38d1-447a-8431-7ef66a36665e",
+              "name": "receipt_id",
+              "value": "={{ $('Filter new files').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f06a3d00-f85c-475f-8b32-d3f3ffad1783",
+              "name": "category",
+              "value": "={{ $json[\"output.items\"].category }}",
+              "type": "string"
+            },
+            {
+              "id": "124a9910-f884-4e6f-9366-bb8bfaa60347",
+              "name": "name",
+              "value": "={{ $json[\"output.items\"].name }}",
+              "type": "string"
+            },
+            {
+              "id": "a6ec8e33-32a9-46fb-bcff-5489a971f9a5",
+              "name": "price",
+              "value": "={{ Number($json[\"output.items\"].price) }}",
+              "type": "string"
+            },
+            {
+              "id": "af74044c-1e83-41fa-96c1-850f2758e4e8",
+              "name": "quantity",
+              "value": "={{ $json[\"output.items\"].quantity }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1600,
+        -528
+      ],
+      "id": "d53918fc-a068-4cf7-91e4-7d1f4ca9152e",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "files",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -608
+      ],
+      "id": "d04e38aa-296f-4bc9-95d4-fc3124cfd9a7",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_GESAMTPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_GESAMTPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_GESAMTPOSTEN_GID"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -80,
+        -608
+      ],
+      "id": "2c3ccc14-3a00-46c5-933a-9cc835af8801",
+      "name": "Get all sheet rows",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const files = $('Aggregate files').first().json.files;\nconst sheetRows = $input.all().map(item => item.json);\nconst existingIds = new Set(\n  sheetRows.map(r => r.receipt_id).filter(id => !!id)\n);\nconst force = !!$('On form submission').first().json['Force reprocess'];\nconst toProcess = force ? files : files.filter(f => !existingIds.has(f.id));\nreturn toProcess.map(f => ({ json: f }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -608
+      ],
+      "id": "e51e9b07-5474-49f9-ac2d-13fb8a8768d5",
+      "name": "Filter new files"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append receipt in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Append items in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all sheet rows": {
+      "main": [
+        [
+          {
+            "node": "Filter new files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Get all sheet rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter new files": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "8f7e3cf4-8d43-4f84-bd12-fe0977cd4b0a",
+  "activeVersionId": null,
+  "versionCounter": 27,
+  "triggerCount": 0,
+  "tags": []
+}
