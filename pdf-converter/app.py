@@ -1,8 +1,10 @@
+import io
 import os
 import subprocess
 import tempfile
 from pathlib import Path
 from flask import Flask, request, jsonify, Response
+from PIL import Image, ImageFilter, ImageOps
 
 app = Flask(__name__)
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -56,6 +58,36 @@ def convert():
         jpg_bytes = output_files[0].read_bytes()
 
     return Response(jpg_bytes, mimetype="image/jpeg")
+
+
+MAX_RESIZE_WIDTH = 1200
+
+
+@app.post("/resize")
+def resize():
+    if "file" not in request.files:
+        return jsonify({"error": "missing 'file' field in form data"}), 400
+
+    img_bytes = request.files["file"].read()
+    if len(img_bytes) > MAX_FILE_SIZE:
+        return jsonify({"error": "file too large (max 10 MB)"}), 400
+
+    try:
+        img = Image.open(io.BytesIO(img_bytes))
+    except Exception:
+        return jsonify({"error": "could not decode image"}), 400
+
+    if img.width > MAX_RESIZE_WIDTH:
+        new_height = int(img.height * MAX_RESIZE_WIDTH / img.width)
+        img = img.resize((MAX_RESIZE_WIDTH, new_height), Image.LANCZOS)
+
+    img = img.convert("L")
+    img = ImageOps.autocontrast(img)
+    img = img.filter(ImageFilter.SHARPEN)
+
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=85, optimize=True)
+    return Response(buf.getvalue(), mimetype="image/jpeg")
 
 
 if __name__ == "__main__":
