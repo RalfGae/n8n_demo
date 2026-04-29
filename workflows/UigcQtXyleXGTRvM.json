@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-29T21:24:10.516Z",
+  "updatedAt": "2026-04-29T22:09:30.008Z",
   "createdAt": "2026-04-27T19:25:13.013Z",
   "id": "UigcQtXyleXGTRvM",
   "name": "Bulk Import",
@@ -318,7 +318,7 @@
             {
               "id": "c7deabdc-f194-4f18-ad73-55192dfefe4f",
               "name": "receipt_id",
-              "value": "={{ $json.id }}",
+              "value": "={{ $('Filter new files').item.json.id }}",
               "type": "string"
             },
             {
@@ -455,7 +455,7 @@
             {
               "id": "ce43264a-38d1-447a-8431-7ef66a36665e",
               "name": "receipt_id",
-              "value": "={{ $json.id }}",
+              "value": "={{ $('Filter new files').item.json.id }}",
               "type": "string"
             },
             {
@@ -763,7 +763,7 @@
             {
               "id": "c7deabdc-f194-4f18-ad73-55192dfefe4f",
               "name": "receipt_id",
-              "value": "={{ $json.id }}",
+              "value": "={{ $('Filter new files').item.json.id }}",
               "type": "string"
             },
             {
@@ -900,7 +900,7 @@
             {
               "id": "ce43264a-38d1-447a-8431-7ef66a36665e",
               "name": "receipt_id",
-              "value": "={{ $json.id }}",
+              "value": "={{ $('Filter new files').item.json.id }}",
               "type": "string"
             },
             {
@@ -985,36 +985,6 @@
       ],
       "id": "c37062c7-d4f0-4125-9c42-98b2ff6cc293",
       "name": "Stop and Error1"
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1600,
-        208
-      ],
-      "id": "a26d6103-995a-470b-a259-ef5775024629",
-      "name": "Merge2"
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1600,
-        -480
-      ],
-      "id": "9c6b9ffc-5430-4e62-9f73-90cee6fdd2ac",
-      "name": "Merge"
     },
     {
       "parameters": {
@@ -1163,7 +1133,12 @@
       "main": [
         [
           {
-            "node": "Merge",
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
             "type": "main",
             "index": 0
           }
@@ -1217,16 +1192,6 @@
             "node": "Download file",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Merge2",
-            "type": "main",
-            "index": 1
-          },
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
           }
         ]
       ]
@@ -1257,7 +1222,12 @@
       "main": [
         [
           {
-            "node": "Merge2",
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out1",
             "type": "main",
             "index": 0
           }
@@ -1337,38 +1307,6 @@
         ]
       ]
     },
-    "Merge2": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields2",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Split Out1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Split Out",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Has binary data?": {
       "main": [
         [
@@ -1401,9 +1339,9 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "a9db3d70-8779-43c3-9dc8-5f2eae53f8c8",
+  "versionId": "ea347c77-8dac-492c-94f4-3ad53839b83b",
   "activeVersionId": "964f8395-5f56-49c9-b005-be283913bc76",
-  "versionCounter": 92,
+  "versionCounter": 96,
   "triggerCount": 1,
   "tags": []
 }
