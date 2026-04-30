@@ -1,6 +1,6 @@
 FROM python:3.12-alpine
 
-RUN apk add --no-cache poppler-utils
+RUN apk add --no-cache poppler-utils libheif
 
 WORKDIR /app
 COPY requirements.txt .

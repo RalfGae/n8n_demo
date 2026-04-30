@@ -6,6 +6,12 @@ from pathlib import Path
 from flask import Flask, request, jsonify, Response
 from PIL import Image, ImageFilter, ImageOps
 
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    pass
+
 app = Flask(__name__)
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
@@ -74,14 +80,15 @@ def resize():
 
     try:
         img = Image.open(io.BytesIO(img_bytes))
-    except Exception:
-        return jsonify({"error": "could not decode image"}), 400
+        img.load()
+    except Exception as e:
+        return jsonify({"error": f"could not decode image: {e}"}), 415
 
     if img.width > MAX_RESIZE_WIDTH:
         new_height = int(img.height * MAX_RESIZE_WIDTH / img.width)
         img = img.resize((MAX_RESIZE_WIDTH, new_height), Image.LANCZOS)
 
-    img = img.convert("L")
+    img = img.convert("RGB").convert("L")
     img = ImageOps.autocontrast(img)
     img = img.filter(ImageFilter.SHARPEN)
 
