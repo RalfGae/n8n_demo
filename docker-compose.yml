@@ -29,7 +29,7 @@ services:
     build: ./pdf-converter
     container_name: pdf-converter
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 512m
     cpus: 0.5
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]

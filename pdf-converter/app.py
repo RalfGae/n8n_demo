@@ -80,6 +80,8 @@ def resize():
 
     try:
         img = Image.open(io.BytesIO(img_bytes))
+        # Hint to JPEG decoder: decode at most 2x the target width to save RAM
+        img.draft(None, (MAX_RESIZE_WIDTH * 2, MAX_RESIZE_WIDTH * 2))
         img.load()
     except Exception as e:
         return jsonify({"error": f"could not decode image: {e}"}), 415
