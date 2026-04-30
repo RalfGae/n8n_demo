@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-29T22:09:30.008Z",
+  "updatedAt": "2026-04-30T07:26:57.305Z",
   "createdAt": "2026-04-27T19:25:13.013Z",
   "id": "UigcQtXyleXGTRvM",
   "name": "Bulk Import",
@@ -77,8 +77,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        48,
-        -192
+        336,
+        -608
       ],
       "id": "50c00f4f-5046-435b-9bc1-f0f75afdf850",
       "name": "Download file",
@@ -89,40 +89,6 @@
         }
       },
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "d8a15269-c5f9-4485-a48c-0d41334536ca",
-              "leftValue": "={{ $binary.data.mimeType }}",
-              "rightValue": "application/pdf",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        544,
-        -192
-      ],
-      "id": "af7db9a6-4b1b-40fb-933b-73034b9780db",
-      "name": "If1"
     },
     {
       "parameters": {
@@ -150,8 +116,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        912,
-        -208
+        1024,
+        -624
       ],
       "id": "f6442049-683d-4058-8d85-a62497f70076",
       "name": "HTTP Request",
@@ -176,8 +142,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
-        1280,
-        -208
+        1392,
+        -624
       ],
       "id": "72bc3b61-23c7-4080-99ae-5ee75d361c0b",
       "name": "Basic LLM Chain",
@@ -197,8 +163,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        1280,
-        -48
+        1392,
+        -464
       ],
       "id": "e28da108-a493-4ede-ad34-cbe3f1f3f134",
       "name": "OpenAI Chat Model",
@@ -219,8 +185,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1424,
-        -48
+        1536,
+        -464
       ],
       "id": "224966a2-c3f0-4aff-9daa-ee8c5e942ac6",
       "name": "Structured Output Parser",
@@ -299,7 +265,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2016,
+        2432,
         -336
       ],
       "id": "a5fed2d0-ff6c-4612-aeab-63f24820fe76",
@@ -318,7 +284,7 @@
             {
               "id": "c7deabdc-f194-4f18-ad73-55192dfefe4f",
               "name": "receipt_id",
-              "value": "={{ $('Filter new files').item.json.id }}",
+              "value": "={{ $json.id }}",
               "type": "string"
             },
             {
@@ -382,7 +348,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1856,
+        2272,
         -336
       ],
       "id": "06849faa-fa2a-410e-ab35-017d685991ca",
@@ -397,7 +363,7 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1840,
+        2256,
         -544
       ],
       "id": "dbf2943e-cda4-42ce-8a9d-121de4525961",
@@ -435,7 +401,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2160,
+        2576,
         -544
       ],
       "id": "a9e017d0-9af2-4b0b-ad8b-19ae80fefdba",
@@ -455,7 +421,7 @@
             {
               "id": "ce43264a-38d1-447a-8431-7ef66a36665e",
               "name": "receipt_id",
-              "value": "={{ $('Filter new files').item.json.id }}",
+              "value": "={{ $json.id }}",
               "type": "string"
             },
             {
@@ -489,7 +455,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2000,
+        2416,
         -544
       ],
       "id": "d53918fc-a068-4cf7-91e4-7d1f4ca9152e",
@@ -583,8 +549,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1104,
-        -208
+        1216,
+        -624
       ],
       "id": "d0391967-1531-4885-9073-433b39e76354",
       "name": "HTTP Request resize",
@@ -597,8 +563,8 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        1840,
-        -16
+        1792,
+        -608
       ],
       "id": "b2c7c1c7-c3f9-48d4-b480-16e3d4f62cbe",
       "name": "Stop and Error"
@@ -622,8 +588,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
-        1280,
-        480
+        1776,
+        -224
       ],
       "id": "c15c2caa-3f5b-4d23-b664-5c086f086dee",
       "name": "Basic LLM Chain1",
@@ -643,8 +609,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        1280,
-        640
+        1776,
+        -64
       ],
       "id": "041406e2-1342-4486-b4f0-e8fa952d430e",
       "name": "OpenAI Chat Model1",
@@ -665,8 +631,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1424,
-        640
+        1920,
+        -64
       ],
       "id": "e15172ae-9b03-4bd1-bab5-2d866440e651",
       "name": "Structured Output Parser1",
@@ -744,8 +710,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2016,
-        352
+        2656,
+        368
       ],
       "id": "2ec1244d-53c7-4ffd-86b3-45b0da6e19ff",
       "name": "Append receipt in sheet1",
@@ -763,7 +729,7 @@
             {
               "id": "c7deabdc-f194-4f18-ad73-55192dfefe4f",
               "name": "receipt_id",
-              "value": "={{ $('Filter new files').item.json.id }}",
+              "value": "={{ $json.id }}",
               "type": "string"
             },
             {
@@ -827,8 +793,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1856,
-        352
+        2496,
+        368
       ],
       "id": "16e5a81f-bca2-4e2f-93ac-a85b9828cb08",
       "name": "Edit Fields2"
@@ -842,8 +808,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1840,
-        144
+        2480,
+        160
       ],
       "id": "4039d44e-13c1-41e3-9bb2-4bf99cc08cfc",
       "name": "Split Out1"
@@ -880,8 +846,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2160,
-        144
+        2800,
+        160
       ],
       "id": "e3274d51-60b4-4363-ada9-291bab90458b",
       "name": "Append items in sheet1",
@@ -900,7 +866,7 @@
             {
               "id": "ce43264a-38d1-447a-8431-7ef66a36665e",
               "name": "receipt_id",
-              "value": "={{ $('Filter new files').item.json.id }}",
+              "value": "={{ $json.id }}",
               "type": "string"
             },
             {
@@ -934,8 +900,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2000,
-        144
+        2640,
+        160
       ],
       "id": "ed3b2da5-fe67-44bb-b294-26fee0fdc92b",
       "name": "Edit Fields3"
@@ -966,8 +932,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1104,
-        480
+        1392,
+        -224
       ],
       "id": "316303b6-3bf4-4940-a5a9-3400404936f2",
       "name": "HTTP Request resize1",
@@ -980,8 +946,8 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        1840,
-        672
+        1904,
+        112
       ],
       "id": "c37062c7-d4f0-4125-9c42-98b2ff6cc293",
       "name": "Stop and Error1"
@@ -1013,8 +979,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        256,
-        -192
+        560,
+        -608
       ],
       "id": "ff5277a5-1d8c-43b0-8475-6950fd06b5af",
       "name": "Has binary data?"
@@ -1026,11 +992,241 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        464,
-        -48
+        736,
+        -528
       ],
       "id": "9103070d-a6ee-44d3-90f7-218f4664fcea",
       "name": "Stop and Error2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6d44d87b-1ebd-4d5b-93c9-c00f76bd8977",
+              "leftValue": "={{ $json.mimeType === 'application/pdf' || ($json.name || '').toLowerCase().endsWith('.pdf') }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        -592
+      ],
+      "id": "c5b7824d-feda-4250-88c4-5fd66dcc87b2",
+      "name": "If PDF meta?"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "fileName": "={{ $json.name }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        336,
+        -384
+      ],
+      "id": "2a929794-29a8-4dfa-8a26-94c090ff4375",
+      "name": "Download file1",
+      "credentials": {
+        "googleApi": {
+          "id": "IE087Stw6nehyVnk",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "077821f4-aa5d-4952-96bd-a9b6701b9a28",
+              "leftValue": "={{ Object.keys($binary || {}).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        -384
+      ],
+      "id": "8994934a-e647-43f9-aac2-72e7f65fcf5a",
+      "name": "Has binary data?1"
+    },
+    {
+      "parameters": {
+        "errorMessage": "=Download failed: {{ $json.name }} ({{ $json.id }})<br> https://drive.google.com/file/d/{{ $json.id }}/view"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -304
+      ],
+      "id": "26bc6dbb-3c01-47ca-b556-3de2486ee809",
+      "name": "Stop and Error3"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1808,
+        -848
+      ],
+      "id": "8edbcef1-f8a0-4540-9201-5c656c0d3dd9",
+      "name": "Merge_PDF"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2240,
+        256
+      ],
+      "id": "7fe64116-8571-49eb-9cf5-198c1f6b23ea",
+      "name": "Merge_JPG"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a77921f4-bb5d-5b52-97bd-b9b6701b9b30",
+              "leftValue": "={{ Object.keys($binary || {}).length > 0 && $json.error === undefined }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -224
+      ],
+      "id": "f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c",
+      "name": "Has binary data?2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b88031f5-cc6f-6c63-08ce-caC7812c0c4e",
+              "leftValue": "={{ Object.keys($binary || {}).length > 0 && $json.error === undefined }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1392,
+        -848
+      ],
+      "id": "b88031f5-cc6f-6c63-08ce-cac7812c0c4e",
+      "name": "Has resize output? (PDF)"
+    },
+    {
+      "parameters": {
+        "errorMessage": "=Resize failed (PDF): {{ $('Filter new files').item.json.name }} ({{ $('Filter new files').item.json.id }})<br>https://drive.google.com/file/d/{{ $('Filter new files').item.json.id }}/view"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        -704
+      ],
+      "id": "c99142f6-dd7f-7d74-19df-dbd8923d1d5f",
+      "name": "Stop and Error5"
+    },
+    {
+      "parameters": {
+        "errorMessage": "=Resize failed: {{ $('Filter new files').item.json.name }} ({{ $('Filter new files').item.json.id }})<br>https://drive.google.com/file/d/{{ $('Filter new files').item.json.id }}/view"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        -80
+      ],
+      "id": "a9b8c7d6-e5f4-4a3b-9c8d-7e6f5a4b3c2d",
+      "name": "Stop and Error4"
     }
   ],
   "connections": {
@@ -1061,24 +1257,6 @@
         [
           {
             "node": "Has binary data?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If1": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "HTTP Request resize1",
             "type": "main",
             "index": 0
           }
@@ -1133,12 +1311,7 @@
       "main": [
         [
           {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Split Out",
+            "node": "Merge_PDF",
             "type": "main",
             "index": 0
           }
@@ -1189,7 +1362,7 @@
       "main": [
         [
           {
-            "node": "Download file",
+            "node": "If PDF meta?",
             "type": "main",
             "index": 0
           }
@@ -1211,7 +1384,25 @@
       "main": [
         [
           {
+            "node": "Has resize output? (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has resize output? (PDF)": {
+      "main": [
+        [
+          {
             "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error5",
             "type": "main",
             "index": 0
           }
@@ -1222,12 +1413,7 @@
       "main": [
         [
           {
-            "node": "Edit Fields2",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Split Out1",
+            "node": "Merge_JPG",
             "type": "main",
             "index": 0
           }
@@ -1300,7 +1486,25 @@
       "main": [
         [
           {
+            "node": "Has binary data?2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has binary data?2": {
+      "main": [
+        [
+          {
             "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error4",
             "type": "main",
             "index": 0
           }
@@ -1311,7 +1515,7 @@
       "main": [
         [
           {
-            "node": "If1",
+            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
@@ -1319,6 +1523,95 @@
         [
           {
             "node": "Stop and Error2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If PDF meta?": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge_PDF",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Download file1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge_JPG",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Download file1": {
+      "main": [
+        [
+          {
+            "node": "Has binary data?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has binary data?1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request resize1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge_PDF": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge_JPG": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields2",
             "type": "main",
             "index": 0
           }
@@ -1339,9 +1632,9 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "ea347c77-8dac-492c-94f4-3ad53839b83b",
+  "versionId": "a10b131a-91ba-451b-9aef-69227c68a3e5",
   "activeVersionId": "964f8395-5f56-49c9-b005-be283913bc76",
-  "versionCounter": 96,
+  "versionCounter": 109,
   "triggerCount": 1,
   "tags": []
 }
