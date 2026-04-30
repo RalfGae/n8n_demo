@@ -497,7 +497,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const files = $('Aggregate files').first().json.files;\nconst sheetRows = $input.all().map(item => item.json);\nconst existingIds = new Set(\n  sheetRows.map(r => r.receipt_id).filter(id => !!id)\n);\nconst force = !!$('On form submission').first().json['Force reprocess'];\nconst toProcess = force ? files : files.filter(f => !existingIds.has(f.id));\nconst filteredToProcess = toProcess.filter(f =>\n  !f.mimeType?.startsWith('application/vnd.google-apps.'));\nreturn filteredToProcess.map(f => ({ json: f }));"
+        "jsCode": "const files = $('Aggregate files').first().json.files;\nconst sheetRows = $input.all().map(item => item.json);\nconst existingIds = new Set(\n  sheetRows.map(r => r.receipt_id).filter(id => !!id)\n);\nconst force = !!$('On form submission').first().json['Force reprocess'];\nconst toProcess = force ? files : files.filter(f => !existingIds.has(f.id));\nconst BLOCKED_EXT = new Set(['.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt', '.txt', '.csv', '.zip', '.mp4', '.mov', '.mp3']);\nconst filteredToProcess = toProcess.filter(f => {\n  if (f.mimeType?.startsWith('application/vnd.google-apps.')) return false;\n  const ext = (f.name || '').toLowerCase().match(/\\.[^.]+$/)?.[0];\n  // No extension: let through — may be a PDF/image saved without extension; Stop and Error will catch it\n  if (!ext) return true;\n  return !BLOCKED_EXT.has(ext);\n});\nreturn filteredToProcess.map(f => ({ json: f }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
