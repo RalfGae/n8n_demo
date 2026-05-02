@@ -126,8 +126,8 @@
     {
       "parameters": {
         "promptType": "=define",
-        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Always output dates in ISO format (YYYY-MM-DD).\n  - The receipt date is the transaction date, typically accompanied by a time (HH:MM). It contains a recognizable day\n  (01–31), month (01–12), and a 4-digit year (e.g. 2024, 2025). Use that date — do not derive or invent a year.\n  - German prices use a comma as decimal separator followed by exactly 2 digits and an optional VAT letter (e.g. '1,09\n   A', '2,30 B', '13,80 A'). These are item prices — never dates. Do not interpret them as dates under any\n  circumstances.\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal: the NETTO (net) amount before tax, always less than or equal to total_amount. Use the printed NETTO\n  value if available; otherwise calculate as total_amount minus tax_amount.                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1. If quantity appears inside the product name (e.g. 'Milk 1L x 12'), extract\n   that number as quantity.\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n  \n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork                                                                                \n  Return the result as JSON matching the provided schema.",
-        "hasOutputParser": true,
+        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Always output dates in ISO format (YYYY-MM-DD).\n  - The receipt date is the transaction date, typically accompanied by a time (HH:MM). It contains a recognizable day\n  (01\u201331), month (01\u201312), and a 4-digit year (e.g. 2024, 2025). Use that date \u2014 do not derive or invent a year.\n  - German prices use a comma as decimal separator followed by exactly 2 digits and an optional VAT letter (e.g. '1,09\n   A', '2,30 B', '13,80 A'). These are item prices \u2014 never dates. Do not interpret them as dates under any\n  circumstances.\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal: the NETTO (net) amount before tax, always less than or equal to total_amount. Use the printed NETTO\n  value if available; otherwise calculate as total_amount minus tax_amount.                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1. If quantity appears inside the product name (e.g. 'Milk 1L x 12'), extract\n   that number as quantity.\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n  \n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork                                                                                \n  Return the result as JSON matching the provided schema.\n  \n\nThe Drive file ID for this receipt is: {{ $('Download file').item.json.id }}\nYou MUST include this exact string (unchanged) as the top-level \"receipt_id\" field in your JSON output.\n\nIMPORTANT: Output ONLY the raw JSON object. Do NOT wrap it in markdown code blocks (no ```json``` or similar). No explanations, no extra text.",
+        "hasOutputParser": false,
         "messages": {
           "messageValues": [
             {
@@ -137,7 +137,10 @@
             }
           ]
         },
-        "batching": {}
+        "batching": {
+          "batchSize": 1,
+          "delayTime": 0
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
@@ -158,7 +161,9 @@
           "mode": "list",
           "cachedResultName": "gpt-5.4-mini"
         },
-        "options": {}
+        "options": {
+          "maxTokens": 4096
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
@@ -176,22 +181,6 @@
           "name": "OpenAi account"
         }
       }
-    },
-    {
-      "parameters": {
-        "schemaType": "manual",
-        "inputSchema": "{                                                                               \n    \"title\": \"ReceiptValidation\",                                                 \n    \"type\": \"object\",                                                             \n    \"properties\": {                                         \n      \"receipt_info\": {                                                           \n        \"type\": \"object\",                                   \n        \"properties\": {\n          \"date\": { \"type\": \"string\", \"format\": \"date\", \"title\": \"Receipt Date\" },\n          \"store\": { \"type\": \"string\", \"title\": \"Store Name\" },                   \n          \"currency\": { \"type\": \"string\", \"title\": \"Currency\" },                  \n          \"total_amount\": { \"type\": \"number\", \"title\": \"Total Amount on Receipt\"  \n  },                                                                              \n          \"tax_amount\": { \"type\": \"number\", \"title\": \"Total Tax Amount\",\n  \"default\": 0 },                                                                 \n          \"subtotal\": { \"type\": \"number\", \"title\": \"Subtotal before tax\",\n  \"default\": 0 },                                                                 \n          \"deposits\": { \"type\": \"number\", \"title\": \"Deposit charges (Pfand)\",\n  \"default\": 0 },                                                                 \n          \"discounts\": { \"type\": \"number\", \"title\": \"Discounts and coupons\",\n  \"default\": 0 },\n          \"confidence\": { \"type\": \"integer\", \"title\": \"Extraction Confidence (1-5)\", \"minimum\":\n   1, \"maximum\": 5 }\n        },                                                  \n        \"required\": [\"date\", \"store\", \"currency\", \"total_amount\", \"confidence\"]                 \n      },                                                                          \n      \"items\": {\n        \"type\": \"array\",                                                          \n        \"items\": {                                          \n          \"type\": \"object\",\n          \"properties\": {\n            \"category\": { \"type\": \"string\", \"title\": \"Item Category\" },\n            \"name\": { \"type\": \"string\", \"title\": \"Item Name\" },                   \n            \"price\": { \"type\": \"number\", \"title\": \"Item Price\" },\n            \"quantity\": { \"type\": \"number\", \"title\": \"Quantity\", \"default\": 1 }   \n          },                                                \n          \"required\": [\"category\", \"name\", \"price\"],                              \n          \"additionalProperties\": false                                           \n        }\n      }                                                                           \n    },                                                      \n    \"required\": [\"receipt_info\", \"items\"],\n    \"additionalProperties\": false\n}"
-      },
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        1536,
-        -464
-      ],
-      "id": "224966a2-c3f0-4aff-9daa-ee8c5e942ac6",
-      "name": "Structured Output Parser",
-      "notesInFlow": false,
-      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -284,13 +273,13 @@
             {
               "id": "c7deabdc-f194-4f18-ad73-55192dfefe4f",
               "name": "receipt_id",
-              "value": "={{ $json.id }}",
+              "value": "={{ $json.receipt_id }}",
               "type": "string"
             },
             {
               "id": "f08f2266-38a4-4394-aeef-4b3843aeb98a",
               "name": "date",
-              "value": "={{ DateTime.fromISO($json.output.receipt_info.date).toFormat('dd.MM.yyyy') }}",
+              "value": "={{ $json.output.receipt_info.date ? DateTime.fromISO($json.output.receipt_info.date).toFormat('dd.MM.yyyy') : '' }}",
               "type": "string"
             },
             {
@@ -421,7 +410,7 @@
             {
               "id": "ce43264a-38d1-447a-8431-7ef66a36665e",
               "name": "receipt_id",
-              "value": "={{ $json.id }}",
+              "value": "={{ $json.receipt_id }}",
               "type": "string"
             },
             {
@@ -497,7 +486,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const files = $('Aggregate files').first().json.files;\nconst sheetRows = $input.all().map(item => item.json);\nconst existingIds = new Set(\n  sheetRows.map(r => r.receipt_id).filter(id => !!id)\n);\nconst force = !!$('On form submission').first().json['Force reprocess'];\nconst toProcess = force ? files : files.filter(f => !existingIds.has(f.id));\nconst BLOCKED_EXT = new Set(['.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt', '.txt', '.csv', '.zip', '.mp4', '.mov', '.mp3']);\nconst filteredToProcess = toProcess.filter(f => {\n  if (f.mimeType?.startsWith('application/vnd.google-apps.')) return false;\n  const ext = (f.name || '').toLowerCase().match(/\\.[^.]+$/)?.[0];\n  // No extension: let through — may be a PDF/image saved without extension; Stop and Error will catch it\n  if (!ext) return true;\n  return !BLOCKED_EXT.has(ext);\n});\nreturn filteredToProcess.map(f => ({ json: f }));"
+        "jsCode": "const files = $('Aggregate files').first().json.files;\nconst sheetRows = $input.all().map(item => item.json);\nconst existingIds = new Set(\n  sheetRows.map(r => r.receipt_id).filter(id => !!id)\n);\nconst force = !!$('On form submission').first().json['Force reprocess'];\nconst toProcess = force ? files : files.filter(f => !existingIds.has(f.id));\nconst BLOCKED_EXT = new Set(['.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt', '.txt', '.csv', '.zip', '.mp4', '.mov', '.mp3']);\nconst filteredToProcess = toProcess.filter(f => {\n  if (f.mimeType?.startsWith('application/vnd.google-apps.')) return false;\n  const ext = (f.name || '').toLowerCase().match(/\\.[^.]+$/)?.[0];\n  // No extension: let through \u2014 may be a PDF/image saved without extension; Stop and Error will catch it\n  if (!ext) return true;\n  return !BLOCKED_EXT.has(ext);\n});\nreturn filteredToProcess.map(f => ({ json: f }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -552,28 +541,15 @@
         1216,
         -624
       ],
-      "id": "d0391967-1531-4885-9073-433b39e76354",
+      "id": "d0391967-1531-4885-9073-423b39e76354",
       "name": "HTTP Request resize",
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "errorMessage": "=LLM parsing failed for receipt {{ $('Filter new files').item.json.id }}"
-      },
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        1792,
-        -608
-      ],
-      "id": "b2c7c1c7-c3f9-48d4-b480-16e3d4f62cbe",
-      "name": "Stop and Error"
-    },
-    {
-      "parameters": {
         "promptType": "=define",
-        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Always output dates in ISO format (YYYY-MM-DD).\n  - The receipt date is the transaction date, typically accompanied by a time (HH:MM). It contains a recognizable day\n  (01–31), month (01–12), and a 4-digit year (e.g. 2024, 2025). Use that date — do not derive or invent a year.\n  - German prices use a comma as decimal separator followed by exactly 2 digits and an optional VAT letter (e.g. '1,09\n   A', '2,30 B', '13,80 A'). These are item prices — never dates. Do not interpret them as dates under any\n  circumstances.\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal: the NETTO (net) amount before tax, always less than or equal to total_amount. Use the printed NETTO\n  value if available; otherwise calculate as total_amount minus tax_amount.                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1. If quantity appears inside the product name (e.g. 'Milk 1L x 12'), extract\n   that number as quantity.\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n  \n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork                                                                                \n  Return the result as JSON matching the provided schema.",
-        "hasOutputParser": true,
+        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Always output dates in ISO format (YYYY-MM-DD).\n  - The receipt date is the transaction date, typically accompanied by a time (HH:MM). It contains a recognizable day\n  (01\u201331), month (01\u201312), and a 4-digit year (e.g. 2024, 2025). Use that date \u2014 do not derive or invent a year.\n  - German prices use a comma as decimal separator followed by exactly 2 digits and an optional VAT letter (e.g. '1,09\n   A', '2,30 B', '13,80 A'). These are item prices \u2014 never dates. Do not interpret them as dates under any\n  circumstances.\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal: the NETTO (net) amount before tax, always less than or equal to total_amount. Use the printed NETTO\n  value if available; otherwise calculate as total_amount minus tax_amount.                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1. If quantity appears inside the product name (e.g. 'Milk 1L x 12'), extract\n   that number as quantity.\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n  \n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork                                                                                \n  Return the result as JSON matching the provided schema.\n  \n\nThe Drive file ID for this receipt is: {{ $('Download file1').item.json.id }}\nYou MUST include this exact string (unchanged) as the top-level \"receipt_id\" field in your JSON output.\n\nIMPORTANT: Output ONLY the raw JSON object. Do NOT wrap it in markdown code blocks (no ```json``` or similar). No explanations, no extra text.",
+        "hasOutputParser": false,
         "messages": {
           "messageValues": [
             {
@@ -583,7 +559,10 @@
             }
           ]
         },
-        "batching": {}
+        "batching": {
+          "batchSize": 1,
+          "delayTime": 0
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
@@ -604,7 +583,9 @@
           "mode": "list",
           "cachedResultName": "gpt-5.4-mini"
         },
-        "options": {}
+        "options": {
+          "maxTokens": 4096
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
@@ -622,21 +603,6 @@
           "name": "OpenAi account"
         }
       }
-    },
-    {
-      "parameters": {
-        "schemaType": "manual",
-        "inputSchema": "{                                                                               \n    \"title\": \"ReceiptValidation\",                                                 \n    \"type\": \"object\",                                                             \n    \"properties\": {                                         \n      \"receipt_info\": {                                                           \n        \"type\": \"object\",                                   \n        \"properties\": {\n          \"date\": { \"type\": \"string\", \"format\": \"date\", \"title\": \"Receipt Date\" },\n          \"store\": { \"type\": \"string\", \"title\": \"Store Name\" },                   \n          \"currency\": { \"type\": \"string\", \"title\": \"Currency\" },                  \n          \"total_amount\": { \"type\": \"number\", \"title\": \"Total Amount on Receipt\"  \n  },                                                                              \n          \"tax_amount\": { \"type\": \"number\", \"title\": \"Total Tax Amount\",\n  \"default\": 0 },                                                                 \n          \"subtotal\": { \"type\": \"number\", \"title\": \"Subtotal before tax\",\n  \"default\": 0 },                                                                 \n          \"deposits\": { \"type\": \"number\", \"title\": \"Deposit charges (Pfand)\",\n  \"default\": 0 },                                                                 \n          \"discounts\": { \"type\": \"number\", \"title\": \"Discounts and coupons\",\n  \"default\": 0 },\n          \"confidence\": { \"type\": \"integer\", \"title\": \"Extraction Confidence (1-5)\", \"minimum\":\n   1, \"maximum\": 5 }\n        },                                                  \n        \"required\": [\"date\", \"store\", \"currency\", \"total_amount\", \"confidence\"]                 \n      },                                                                          \n      \"items\": {\n        \"type\": \"array\",                                                          \n        \"items\": {                                          \n          \"type\": \"object\",\n          \"properties\": {\n            \"category\": { \"type\": \"string\", \"title\": \"Item Category\" },\n            \"name\": { \"type\": \"string\", \"title\": \"Item Name\" },                   \n            \"price\": { \"type\": \"number\", \"title\": \"Item Price\" },\n            \"quantity\": { \"type\": \"number\", \"title\": \"Quantity\", \"default\": 1 }   \n          },                                                \n          \"required\": [\"category\", \"name\", \"price\"],                              \n          \"additionalProperties\": false                                           \n        }\n      }                                                                           \n    },                                                      \n    \"required\": [\"receipt_info\", \"items\"],\n    \"additionalProperties\": false\n}"
-      },
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        1920,
-        -64
-      ],
-      "id": "e15172ae-9b03-4bd1-bab5-2d866440e651",
-      "name": "Structured Output Parser1",
-      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -729,13 +695,13 @@
             {
               "id": "c7deabdc-f194-4f18-ad73-55192dfefe4f",
               "name": "receipt_id",
-              "value": "={{ $json.id }}",
+              "value": "={{ $json.receipt_id }}",
               "type": "string"
             },
             {
               "id": "f08f2266-38a4-4394-aeef-4b3843aeb98a",
               "name": "date",
-              "value": "={{ DateTime.fromISO($json.output.receipt_info.date).toFormat('dd.MM.yyyy') }}",
+              "value": "={{ $json.output.receipt_info.date ? DateTime.fromISO($json.output.receipt_info.date).toFormat('dd.MM.yyyy') : '' }}",
               "type": "string"
             },
             {
@@ -866,7 +832,7 @@
             {
               "id": "ce43264a-38d1-447a-8431-7ef66a36665e",
               "name": "receipt_id",
-              "value": "={{ $json.id }}",
+              "value": "={{ $json.receipt_id }}",
               "type": "string"
             },
             {
@@ -941,19 +907,6 @@
     },
     {
       "parameters": {
-        "errorMessage": "=LLM parsing failed for receipt {{ $('Filter new files').item.json.id }}"
-      },
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        1904,
-        112
-      ],
-      "id": "c37062c7-d4f0-4125-9c42-98b2ff6cc293",
-      "name": "Stop and Error1"
-    },
-    {
-      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -984,19 +937,6 @@
       ],
       "id": "ff5277a5-1d8c-43b0-8475-6950fd06b5af",
       "name": "Has binary data?"
-    },
-    {
-      "parameters": {
-        "errorMessage": "=Download failed: {{ $json.name }} ({{ $json.id }})<br> https://drive.google.com/file/d/{{ $json.id }}/view"
-      },
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        736,
-        -528
-      ],
-      "id": "9103070d-a6ee-44d3-90f7-218f4664fcea",
-      "name": "Stop and Error2"
     },
     {
       "parameters": {
@@ -1095,49 +1035,6 @@
     },
     {
       "parameters": {
-        "errorMessage": "=Download failed: {{ $json.name }} ({{ $json.id }})<br> https://drive.google.com/file/d/{{ $json.id }}/view"
-      },
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        736,
-        -304
-      ],
-      "id": "26bc6dbb-3c01-47ca-b556-3de2486ee809",
-      "name": "Stop and Error3"
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1808,
-        -848
-      ],
-      "id": "8edbcef1-f8a0-4540-9201-5c656c0d3dd9",
-      "name": "Merge_PDF"
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2240,
-        256
-      ],
-      "id": "7fe64116-8571-49eb-9cf5-198c1f6b23ea",
-      "name": "Merge_JPG"
-    },
-    {
-      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -1204,29 +1101,461 @@
     },
     {
       "parameters": {
-        "errorMessage": "=Resize failed (PDF): {{ $('Filter new files').item.json.name }} ({{ $('Filter new files').item.json.id }})<br>https://drive.google.com/file/d/{{ $('Filter new files').item.json.id }}/view"
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa000001-0000-0000-0000-000000000001-1",
+              "name": "receipt_id",
+              "value": "={{ $json.receipt_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000001-2",
+              "name": "filename",
+              "value": "={{ $json.filename || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000001-3",
+              "name": "error_type",
+              "value": "LLM parse error (PDF)",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000001-4",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || (typeof $json.error === 'string' ? $json.error : JSON.stringify($json.error)) || 'LLM parse error' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000001-5",
+              "name": "raw_output",
+              "value": "={{ $json.text || (typeof $json.error === 'string' ? $json.error : JSON.stringify($json.error)) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000001-6",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000001-7",
+              "name": "drive_url",
+              "value": "={{ $json.receipt_id ? 'https://drive.google.com/file/d/' + $json.receipt_id + '/view' : '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
       },
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1792,
+        -608
+      ],
+      "id": "aa000001-0000-0000-0000-000000000001",
+      "name": "Set parse error (PDF)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa000001-0000-0000-0000-000000000002-1",
+              "name": "receipt_id",
+              "value": "={{ $json.receipt_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000002-2",
+              "name": "filename",
+              "value": "={{ $json.filename || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000002-3",
+              "name": "error_type",
+              "value": "LLM parse error (JPG)",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000002-4",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || (typeof $json.error === 'string' ? $json.error : JSON.stringify($json.error)) || 'LLM parse error' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000002-5",
+              "name": "raw_output",
+              "value": "={{ $json.text || (typeof $json.error === 'string' ? $json.error : JSON.stringify($json.error)) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000002-6",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000002-7",
+              "name": "drive_url",
+              "value": "={{ $json.receipt_id ? 'https://drive.google.com/file/d/' + $json.receipt_id + '/view' : '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1904,
+        112
+      ],
+      "id": "aa000001-0000-0000-0000-000000000002",
+      "name": "Set parse error (JPG)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa000001-0000-0000-0000-000000000003-1",
+              "name": "receipt_id",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000003-2",
+              "name": "filename",
+              "value": "={{ $json.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000003-3",
+              "name": "error_type",
+              "value": "Download failed (PDF)",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000003-4",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || $json.error?.description || 'No binary data returned' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000003-5",
+              "name": "raw_output",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000003-6",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000003-7",
+              "name": "drive_url",
+              "value": "={{ 'https://drive.google.com/file/d/' + ($json.id || '') + '/view' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        -528
+      ],
+      "id": "aa000001-0000-0000-0000-000000000003",
+      "name": "Set download error (PDF)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa000001-0000-0000-0000-000000000004-1",
+              "name": "receipt_id",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000004-2",
+              "name": "filename",
+              "value": "={{ $json.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000004-3",
+              "name": "error_type",
+              "value": "Download failed (JPG)",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000004-4",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || $json.error?.description || 'No binary data returned' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000004-5",
+              "name": "raw_output",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000004-6",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000004-7",
+              "name": "drive_url",
+              "value": "={{ 'https://drive.google.com/file/d/' + ($json.id || '') + '/view' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        -304
+      ],
+      "id": "aa000001-0000-0000-0000-000000000004",
+      "name": "Set download error (JPG)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa000001-0000-0000-0000-000000000005-1",
+              "name": "receipt_id",
+              "value": "={{ $('Download file').item.json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000005-2",
+              "name": "filename",
+              "value": "={{ $('Download file').item.json.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000005-3",
+              "name": "error_type",
+              "value": "Resize/convert failed (PDF)",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000005-4",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || $json.error?.description || 'No binary data returned' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000005-5",
+              "name": "raw_output",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000005-6",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000005-7",
+              "name": "drive_url",
+              "value": "={{ 'https://drive.google.com/file/d/' + ($('Download file').item.json.id || '') + '/view' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
         1392,
         -704
       ],
-      "id": "c99142f6-dd7f-7d74-19df-dbd8923d1d5f",
-      "name": "Stop and Error5"
+      "id": "aa000001-0000-0000-0000-000000000005",
+      "name": "Set resize error (PDF)"
     },
     {
       "parameters": {
-        "errorMessage": "=Resize failed: {{ $('Filter new files').item.json.name }} ({{ $('Filter new files').item.json.id }})<br>https://drive.google.com/file/d/{{ $('Filter new files').item.json.id }}/view"
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa000001-0000-0000-0000-000000000006-1",
+              "name": "receipt_id",
+              "value": "={{ $('Download file1').item.json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000006-2",
+              "name": "filename",
+              "value": "={{ $('Download file1').item.json.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000006-3",
+              "name": "error_type",
+              "value": "Resize failed (JPG)",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000006-4",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || $json.error?.description || 'No binary data returned' }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000006-5",
+              "name": "raw_output",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000006-6",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "aa000001-0000-0000-0000-000000000006-7",
+              "name": "drive_url",
+              "value": "={{ 'https://drive.google.com/file/d/' + ($('Download file1').item.json.id || '') + '/view' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
       },
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
         1568,
         -80
       ],
-      "id": "a9b8c7d6-e5f4-4a3b-9c8d-7e6f5a4b3c2d",
-      "name": "Stop and Error4"
+      "id": "aa000001-0000-0000-0000-000000000006",
+      "name": "Set resize error (JPG)"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_ERRORS_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_ERRORS_GID",
+          "cachedResultUrl": "N8N_SHEET_ERRORS_GID"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2200,
+        350
+      ],
+      "id": "aa000001-0000-0000-0000-000000000007",
+      "name": "Append to errors sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\nlet receiptId = '', filename = '';\ntry {\n  const dlItem = $('Download file').item;\n  receiptId = dlItem?.json?.id   || '';\n  filename  = dlItem?.json?.name || '';\n} catch (e) {\n  // item pairing failed; receipt_id empty but text preserved\n}\nreturn {\n  json: {\n    ...item.json,\n    receipt_id: receiptId,\n    filename:   filename\n  }\n};",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        -700
+      ],
+      "id": "bb000001-0000-0000-0000-000000000001",
+      "name": "Add file metadata (PDF)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\nconst text = item.json.text || '';\nconst cleaned = text.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  throw new Error('JSON parse failed: ' + e.message);\n}\n// Normalize: items field name variations\nif (parsed && !parsed.items) {\n  parsed.items = parsed.individual_items || parsed.line_items || parsed.products || parsed.purchased_items || [];\n}\nif (!parsed?.receipt_info || !Array.isArray(parsed?.items)) {\n  throw new Error('Schema mismatch: missing receipt_info or items');\n}\n// Normalize: confidence may be at top level instead of inside receipt_info\nconst ri = parsed.receipt_info;\nif (ri.confidence == null) {\n  ri.confidence = ri.confidence_score ?? parsed.confidence ?? parsed.confidence_score ?? 3;\n}\n// Normalize: store field name variations\nri.store = ri.store || ri.store_name || ri.merchant || ri.vendor || ri.retailer || '';\n// Normalize: date field name variations + format (YYYY-MM-DD or DD.MM.YYYY)\nconst rawDate = ri.date || ri.receipt_date || ri.transaction_date || ri.purchase_date || '';\nconst isoMatch = rawDate.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\nconst deMatch  = rawDate.match(/^(\\d{2})\\.(\\d{2})\\.(\\d{4})$/);\nri.date = isoMatch ? `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`\n        : deMatch  ? `${deMatch[3]}-${deMatch[2]}-${deMatch[1]}`\n        : '';\n// Default numeric fields to avoid NaN in downstream Set nodes\nri.tax_amount = ri.tax_amount ?? 0;\nri.subtotal = ri.subtotal ?? 0;\nri.deposits = ri.deposits ?? 0;\nri.discounts = ri.discounts ?? 0;\n// Normalize items: quantity 0/null/undefined \u2192 1\n// quantity: 0/null/fraction(<1) \u2192 1; weight-based items use fraction as qty\nparsed.items = parsed.items.map(it => {\n  const qty = Number(it.quantity);\n  return { ...it, quantity: (Number.isFinite(qty) && qty >= 1) ? qty : 1 };\n});\nconst receiptId = parsed.receipt_id || item.json.receipt_id || '';\ndelete parsed.receipt_id;\nreturn { json: { output: parsed, text: text, receipt_id: receiptId, filename: item.json.filename } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        -700
+      ],
+      "id": "bb000001-0000-0000-0000-000000000002",
+      "name": "Parse LLM output (PDF)",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\nlet receiptId = '', filename = '';\ntry {\n  const dlItem = $('Download file1').item;\n  receiptId = dlItem?.json?.id   || '';\n  filename  = dlItem?.json?.name || '';\n} catch (e) {\n  // item pairing failed; receipt_id empty but text preserved\n}\nreturn {\n  json: {\n    ...item.json,\n    receipt_id: receiptId,\n    filename:   filename\n  }\n};",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -224
+      ],
+      "id": "bb000001-0000-0000-0000-000000000003",
+      "name": "Add file metadata (JPG)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\nconst text = item.json.text || '';\nconst cleaned = text.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  throw new Error('JSON parse failed: ' + e.message);\n}\n// Normalize: items field name variations\nif (parsed && !parsed.items) {\n  parsed.items = parsed.individual_items || parsed.line_items || parsed.products || parsed.purchased_items || [];\n}\nif (!parsed?.receipt_info || !Array.isArray(parsed?.items)) {\n  throw new Error('Schema mismatch: missing receipt_info or items');\n}\n// Normalize: confidence may be at top level instead of inside receipt_info\nconst ri = parsed.receipt_info;\nif (ri.confidence == null) {\n  ri.confidence = ri.confidence_score ?? parsed.confidence ?? parsed.confidence_score ?? 3;\n}\n// Normalize: store field name variations\nri.store = ri.store || ri.store_name || ri.merchant || ri.vendor || ri.retailer || '';\n// Normalize: date field name variations + format (YYYY-MM-DD or DD.MM.YYYY)\nconst rawDate = ri.date || ri.receipt_date || ri.transaction_date || ri.purchase_date || '';\nconst isoMatch = rawDate.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\nconst deMatch  = rawDate.match(/^(\\d{2})\\.(\\d{2})\\.(\\d{4})$/);\nri.date = isoMatch ? `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`\n        : deMatch  ? `${deMatch[3]}-${deMatch[2]}-${deMatch[1]}`\n        : '';\n// Default numeric fields to avoid NaN in downstream Set nodes\nri.tax_amount = ri.tax_amount ?? 0;\nri.subtotal = ri.subtotal ?? 0;\nri.deposits = ri.deposits ?? 0;\nri.discounts = ri.discounts ?? 0;\n// Normalize items: quantity 0/null/undefined \u2192 1\n// quantity: 0/null/fraction(<1) \u2192 1; weight-based items use fraction as qty\nparsed.items = parsed.items.map(it => {\n  const qty = Number(it.quantity);\n  return { ...it, quantity: (Number.isFinite(qty) && qty >= 1) ? qty : 1 };\n});\nconst receiptId = parsed.receipt_id || item.json.receipt_id || '';\ndelete parsed.receipt_id;\nreturn { json: { output: parsed, text: text, receipt_id: receiptId, filename: item.json.filename } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        50
+      ],
+      "id": "bb000001-0000-0000-0000-000000000004",
+      "name": "Parse LLM output (JPG)",
+      "onError": "continueErrorOutput"
     }
   ],
   "connections": {
@@ -1285,17 +1614,6 @@
         ]
       ]
     },
-    "Structured Output Parser": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Basic LLM Chain",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Edit Fields": {
       "main": [
         [
@@ -1311,14 +1629,48 @@
       "main": [
         [
           {
-            "node": "Merge_PDF",
+            "node": "Add file metadata (PDF)",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Stop and Error",
+            "node": "Set parse error (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add file metadata (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM output (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM output (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set parse error (PDF)",
             "type": "main",
             "index": 0
           }
@@ -1402,7 +1754,7 @@
         ],
         [
           {
-            "node": "Stop and Error5",
+            "node": "Set resize error (PDF)",
             "type": "main",
             "index": 0
           }
@@ -1413,14 +1765,48 @@
       "main": [
         [
           {
-            "node": "Merge_JPG",
+            "node": "Add file metadata (JPG)",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Stop and Error1",
+            "node": "Set parse error (JPG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add file metadata (JPG)": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM output (JPG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM output (JPG)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set parse error (JPG)",
             "type": "main",
             "index": 0
           }
@@ -1433,17 +1819,6 @@
           {
             "node": "Basic LLM Chain1",
             "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Structured Output Parser1": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Basic LLM Chain1",
-            "type": "ai_outputParser",
             "index": 0
           }
         ]
@@ -1504,7 +1879,7 @@
         ],
         [
           {
-            "node": "Stop and Error4",
+            "node": "Set resize error (JPG)",
             "type": "main",
             "index": 0
           }
@@ -1522,7 +1897,7 @@
         ],
         [
           {
-            "node": "Stop and Error2",
+            "node": "Set download error (PDF)",
             "type": "main",
             "index": 0
           }
@@ -1536,11 +1911,6 @@
             "node": "Download file",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Merge_PDF",
-            "type": "main",
-            "index": 1
           }
         ],
         [
@@ -1548,11 +1918,6 @@
             "node": "Download file1",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Merge_JPG",
-            "type": "main",
-            "index": 1
           }
         ]
       ]
@@ -1579,39 +1944,73 @@
         ],
         [
           {
-            "node": "Stop and Error3",
+            "node": "Set download error (JPG)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Merge_PDF": {
+    "Set parse error (PDF)": {
       "main": [
         [
           {
-            "node": "Split Out",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Edit Fields",
+            "node": "Append to errors sheet",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Merge_JPG": {
+    "Set parse error (JPG)": {
       "main": [
         [
           {
-            "node": "Split Out1",
+            "node": "Append to errors sheet",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "Set download error (PDF)": {
+      "main": [
+        [
           {
-            "node": "Edit Fields2",
+            "node": "Append to errors sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set download error (JPG)": {
+      "main": [
+        [
+          {
+            "node": "Append to errors sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set resize error (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Append to errors sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set resize error (JPG)": {
+      "main": [
+        [
+          {
+            "node": "Append to errors sheet",
             "type": "main",
             "index": 0
           }
@@ -1634,7 +2033,7 @@
   "pinData": {},
   "versionId": "a10b131a-91ba-451b-9aef-69227c68a3e5",
   "activeVersionId": "964f8395-5f56-49c9-b005-be283913bc76",
-  "versionCounter": 109,
+  "versionCounter": 110,
   "triggerCount": 1,
   "tags": []
 }
