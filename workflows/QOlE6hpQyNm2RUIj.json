@@ -105,9 +105,11 @@
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "gpt-4.1-mini"
+          "value": "gpt-5.4-mini"
         },
-        "options": {}
+        "options": {
+          "maxTokens": 16384
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
