@@ -33,8 +33,8 @@ Legend: ✅ Done · 🔄 Open · ❌ Cancelled
 | Fix store matching | 🔄 | `get_store_tolerance('Rewe GmbH')` does not match `'REWE'`. Replace exact match with normalized substring match. |
 | Clean up legacy scripts | 🔄 | `enhance_image*.py` (5 files) and `analyze_receipt_accuracy.py` unused since Tesseract era. `analyze_receipt_accuracy.py` also crashes (missing `datetime` import). |
 | Workflow Testing Skill | 🔄 | Claude Code skill for targeted re-testing of individual receipts via Non-Bulk WF: load anomalies from GSheet, trigger by Drive file ID, compare output against expected values, suggest prompt/workflow fixes. Prerequisite: Non-Bulk WF stable + n8n API trigger clarified. |
-| Fix PDF mimeType filter in Non-Bulk WF | 🔄 | IF-PDF condition uses `mimeType === 'application/pdf' \|\| name.endsWith('.pdf')` — the OR clause lets text files with .pdf extension through (e.g. QR code receipts that are just a URL). Change to strict `mimeType === 'application/pdf'` only. WF: QOlE6hpQyNm2RUIj. |
-| Harden date extraction prompt | 🔄 | Model picks wrong date from receipt when multiple dates are present (e.g. product labels, expiry, certification timestamps). Observed: Markt-Bäckerei 2026-05-23 extracted as 2023-11-09 — likely latched onto a `DD.MM.YY` date elsewhere on the document. Fix: instruct model explicitly to use the transaction/receipt date (Bondatum/Kassendatum/top-of-receipt timestamp), not other dates. |
+| Fix PDF mimeType filter in Non-Bulk WF | ✅ | Strict `mimeType === 'application/pdf'` only. WF: QOlE6hpQyNm2RUIj. |
+| Harden date extraction prompt | ✅ | Prompt now explicitly instructs model to use transaction date (Bondatum/Kassendatum) only, ignore product/expiry/label dates, and explains DD.MM.YY format (23.05.26 = 2026-05-23). Applied to all LLM chains in both WFs. |
 
 ### Known data anomalies (manual review)
 
