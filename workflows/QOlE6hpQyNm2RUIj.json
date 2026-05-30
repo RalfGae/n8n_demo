@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-04-29T11:28:44.739Z",
+  "updatedAt": "2026-05-09T00:00:00.000Z",
   "createdAt": "2026-04-25T11:51:33.346Z",
   "id": "QOlE6hpQyNm2RUIj",
-  "name": "Receipt Processor v1.2 — Phase 3",
+  "name": "Receipt Processor v1.3 — Phase 3",
   "description": null,
   "active": true,
   "isArchived": false,
@@ -32,7 +32,7 @@
       "typeVersion": 1,
       "position": [
         0,
-        384
+        0
       ],
       "id": "dad6265c-fca7-4b6e-a0e1-b1ec9e9ce555",
       "name": "Google Drive Trigger",
@@ -40,283 +40,6 @@
         "googleApi": {
           "id": "IE087Stw6nehyVnk",
           "name": "Google Drive account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "authentication": "serviceAccount",
-        "operation": "download",
-        "fileId": {
-          "__rl": true,
-          "value": "={{ $('Google Drive Trigger').item.json.id }}",
-          "mode": "id"
-        },
-        "options": {
-          "fileName": "={{ $('Google Drive Trigger').item.json.name }}"
-        }
-      },
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        160,
-        384
-      ],
-      "id": "a0d65e74-c1cb-43b1-846e-7f93bba8707d",
-      "name": "Download file",
-      "credentials": {
-        "googleApi": {
-          "id": "IE087Stw6nehyVnk",
-          "name": "Google Drive account"
-        }
-      },
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "promptType": "=define",
-        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Always output dates in ISO format (YYYY-MM-DD).\n  - The receipt date is the transaction date, typically accompanied by a time (HH:MM). It contains a recognizable day\n  (01–31), month (01–12), and a 4-digit year (e.g. 2024, 2025). Use that date — do not derive or invent a year.\n  - German prices use a comma as decimal separator followed by exactly 2 digits and an optional VAT letter (e.g. '1,09\n   A', '2,30 B', '13,80 A'). These are item prices — never dates. Do not interpret them as dates under any\n  circumstances.\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal: the NETTO (net) amount before tax, always less than or equal to total_amount. Use the printed NETTO\n  value if available; otherwise calculate as total_amount minus tax_amount.                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1. If quantity appears inside the product name (e.g. 'Milk 1L x 12'), extract\n   that number as quantity.\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n  \n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork                                                                                \n  Return the result as JSON matching the provided schema.",
-        "hasOutputParser": true,
-        "messages": {
-          "messageValues": [
-            {
-              "type": "HumanMessagePromptTemplate",
-              "messageType": "imageBinary",
-              "imageDetail": "high"
-            }
-          ]
-        },
-        "batching": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1.7,
-      "position": [
-        848,
-        352
-      ],
-      "id": "e39dfe5e-fd94-41d8-bc7c-d2a22075001b",
-      "name": "Basic LLM Chain",
-      "retryOnFail": true,
-      "waitBetweenTries": 5000,
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-5.4-mini"
-        },
-        "options": {
-          "maxTokens": 16384
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        848,
-        528
-      ],
-      "id": "ad7a5851-ca2f-46af-b6c1-d7554712a196",
-      "name": "OpenAI Chat Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "My4Bnh4g8Z04h3cM",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "schemaType": "manual",
-        "inputSchema": "{                                                                               \n    \"title\": \"ReceiptValidation\",                                                 \n    \"type\": \"object\",                                                             \n    \"properties\": {                                         \n      \"receipt_info\": {                                                           \n        \"type\": \"object\",                                   \n        \"properties\": {\n          \"date\": { \"type\": \"string\", \"format\": \"date\", \"title\": \"Receipt Date\" },\n          \"store\": { \"type\": \"string\", \"title\": \"Store Name\" },                   \n          \"currency\": { \"type\": \"string\", \"title\": \"Currency\" },                  \n          \"total_amount\": { \"type\": \"number\", \"title\": \"Total Amount on Receipt\"  \n  },                                                                              \n          \"tax_amount\": { \"type\": \"number\", \"title\": \"Total Tax Amount\",\n  \"default\": 0 },                                                                 \n          \"subtotal\": { \"type\": \"number\", \"title\": \"Subtotal before tax\",\n  \"default\": 0 },                                                                 \n          \"deposits\": { \"type\": \"number\", \"title\": \"Deposit charges (Pfand)\",\n  \"default\": 0 },                                                                 \n          \"discounts\": { \"type\": \"number\", \"title\": \"Discounts and coupons\",\n  \"default\": 0 },\n          \"confidence\": { \"type\": \"integer\", \"title\": \"Extraction Confidence (1-5)\", \"minimum\":\n   1, \"maximum\": 5 }\n        },                                                  \n        \"required\": [\"date\", \"store\", \"currency\", \"total_amount\", \"confidence\"]                 \n      },\n      \"items\": {\n        \"type\": \"array\",                                                          \n        \"items\": {                                          \n          \"type\": \"object\",\n          \"properties\": {\n            \"category\": { \"type\": \"string\", \"title\": \"Item Category\" },\n            \"name\": { \"type\": \"string\", \"title\": \"Item Name\" },                   \n            \"price\": { \"type\": \"number\", \"title\": \"Item Price\" },\n            \"quantity\": { \"type\": \"number\", \"title\": \"Quantity\", \"default\": 1 }   \n          },                                                \n          \"required\": [\"category\", \"name\", \"price\"],                              \n          \"additionalProperties\": false                                           \n        }\n      }                                                                           \n    },                                                      \n    \"required\": [\"receipt_info\", \"items\"],\n    \"additionalProperties\": false\n}"
-      },
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        992,
-        528
-      ],
-      "id": "ce81b0c5-8f72-4555-bd81-3908eece6dbd",
-      "name": "Structured Output Parser"
-    },
-    {
-      "parameters": {
-        "sendTo": "={{ $env.N8N_NOTIFICATION_EMAIL }}",
-        "subject": "Addition of receipt to database",
-        "message": "=The following receipt has been received and added to the sheet.<br><br>\n\n{{ $json.store }}<br><br>\n{{ $json.date }}<br><br>\n{{ $json.total_amount }} {{ $json.currency }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [
-        1648,
-        352
-      ],
-      "id": "2b4f7a7f-6c7c-42aa-be6d-a1e29eff017b",
-      "name": "Send a message",
-      "webhookId": "01a170ea-6599-424d-9c21-9ddddcf102c2",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "PNyXeGOIJ66dAoLf",
-          "name": "Gmail account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "errorMessage": "Download failed!"
-      },
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        384,
-        544
-      ],
-      "id": "f3c03be7-b2dd-4046-980a-bec80d748ad3",
-      "name": "Stop and Error | Download"
-    },
-    {
-      "parameters": {
-        "fieldToSplitOut": "=output.items",
-        "include": "=",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
-      "position": [
-        1168,
-        112
-      ],
-      "id": "99220eb3-49da-43e5-8cd2-d06a5402a987",
-      "name": "Split Out"
-    },
-    {
-      "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
-          "mode": "list",
-          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
-          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "={{ $env.N8N_SHEET_EINZELPOSTEN_GID }}",
-          "mode": "list",
-          "cachedResultName": "N8N_SHEET_EINZELPOSTEN_GID",
-          "cachedResultUrl": "N8N_SHEET_EINZELPOSTEN_GID"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {},
-          "matchingColumns": [],
-          "schema": [],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {
-          "useAppend": true
-        }
-      },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "position": [
-        1488,
-        112
-      ],
-      "id": "bed24046-f9ba-4894-810d-fedaa6e0a205",
-      "name": "Append items in sheet",
-      "alwaysOutputData": false,
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "8GzJQm91xR4OBFgu",
-          "name": "Google Sheets account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
-          "mode": "list",
-          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
-          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "={{ $env.N8N_SHEET_GESAMTPOSTEN_GID }}",
-          "mode": "list",
-          "cachedResultName": "N8N_SHEET_GESAMTPOSTEN_GID",
-          "cachedResultUrl": "N8N_SHEET_GESAMTPOSTEN_GID"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {
-            "date": "={{ $json.output.receipt_info.date }}",
-            "store": "={{ $json.output.receipt_info.store }}",
-            "price": "={{ $json.output.receipt_info.total_amount }}",
-            "currency": "={{ $json.output.receipt_info.currency }}"
-          },
-          "matchingColumns": [],
-          "schema": [
-            {
-              "id": "date",
-              "displayName": "date",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "store",
-              "displayName": "store",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "price",
-              "displayName": "price",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "currency",
-              "displayName": "currency",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "position": [
-        1488,
-        352
-      ],
-      "id": "a7929ae4-b490-4a7e-9986-798be691b046",
-      "name": "Append receipt in sheet",
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "8GzJQm91xR4OBFgu",
-          "name": "Google Sheets account"
         }
       }
     },
@@ -331,13 +54,12 @@
           },
           "conditions": [
             {
-              "id": "2b64fcd1-bcba-4891-89ac-fba39e333f74",
-              "leftValue": "= {{ $binary.data.mimeType }} ",
-              "rightValue": "application/pdf",
+              "id": "6d44d87b-1ebd-4d5b-93c9-c00f76bd8977",
+              "leftValue": "={{ $json.mimeType === 'application/pdf' || ($json.name || '').toLowerCase().endsWith('.pdf') }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
+                "type": "boolean",
+                "operation": "equals"
               }
             }
           ],
@@ -348,11 +70,253 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        384,
-        368
+        220,
+        0
       ],
-      "id": "9789eb29-0dd2-4ef4-aff0-f417deadbdd5",
-      "name": "If"
+      "id": "c5b7824d-feda-4250-88c4-5fd66dcc87b2",
+      "name": "If PDF meta?"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "fileName": "={{ $json.name }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        440,
+        -480
+      ],
+      "id": "50c00f4f-5046-435b-9bc1-f0f75afdf850",
+      "name": "Download file",
+      "credentials": {
+        "googleApi": {
+          "id": "IE087Stw6nehyVnk",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "fileName": "={{ $json.name }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        440,
+        480
+      ],
+      "id": "2a929794-29a8-4dfa-8a26-94c090ff4375",
+      "name": "Download file1",
+      "credentials": {
+        "googleApi": {
+          "id": "IE087Stw6nehyVnk",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "69798aa7-bea5-43a5-bd87-d2457354acdd",
+              "leftValue": "={{ Object.keys($binary || {}).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        660,
+        -480
+      ],
+      "id": "ff5277a5-1d8c-43b0-8475-6950fd06b5af",
+      "name": "Has binary data?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b9b0291c-e831-4f70-b4b0-b62700d3c6b5",
+              "leftValue": "={{ Object.keys($binary || {}).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        660,
+        480
+      ],
+      "id": "8994934a-e647-43f9-aac2-72e7f65fcf5a",
+      "name": "Has binary data?1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "070b0bc3-8270-4c10-8b93-4bf6ecdba61a",
+              "name": "receipt_id",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "96ea6fc0-4cad-4948-825c-64ae3d7b04ce",
+              "name": "filename",
+              "value": "={{ $json.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "78df17fd-5b61-4c7f-94f3-04184a46b73b",
+              "name": "error_type",
+              "value": "Download failed (PDF)",
+              "type": "string"
+            },
+            {
+              "id": "5b591cfe-56b9-4632-9661-5f6a5493c7f0",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || $json.error?.description || 'No binary data returned' }}",
+              "type": "string"
+            },
+            {
+              "id": "841fe436-32ed-406b-8aa9-7b05f9f9a018",
+              "name": "raw_output",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "b22cf6ca-8de8-4bfe-9a31-e28a2d987dc9",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "776dc08a-064e-45fb-b4ff-dd6224b25058",
+              "name": "drive_url",
+              "value": "={{ 'https://drive.google.com/file/d/' + ($json.id || '') + '/view' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        -680
+      ],
+      "id": "aa000001-0000-0000-0000-000000000003",
+      "name": "Set download error (PDF)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e649b4b4-38cd-4ede-8225-aceb1fc8a5ab",
+              "name": "receipt_id",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "5ed48e8d-8672-4d9d-ac5c-292912c5f49a",
+              "name": "filename",
+              "value": "={{ $json.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "b62768f6-860b-4179-baee-d964591aff03",
+              "name": "error_type",
+              "value": "Download failed (JPG)",
+              "type": "string"
+            },
+            {
+              "id": "bb119e05-ce37-4281-923d-ad79bcbf584b",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || $json.error?.description || 'No binary data returned' }}",
+              "type": "string"
+            },
+            {
+              "id": "a6b3b693-f045-4b07-96f9-d849ab4771fc",
+              "name": "raw_output",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "355186fb-a599-4a62-b56c-c197ce69da75",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "b297f089-100c-44c7-9979-1f4a7871ca7b",
+              "name": "drive_url",
+              "value": "={{ 'https://drive.google.com/file/d/' + ($json.id || '') + '/view' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        680
+      ],
+      "id": "aa000001-0000-0000-0000-000000000004",
+      "name": "Set download error (JPG)"
     },
     {
       "parameters": {
@@ -380,11 +344,558 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        624,
+        880,
+        -480
+      ],
+      "id": "f6442049-683d-4058-8d85-a62497f70076",
+      "name": "HTTP Request",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://pdf-converter:8000/resize",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        880,
         480
       ],
-      "id": "07112de6-5ef4-44e6-a6ba-f0b1b0ef0987",
-      "name": "HTTP Request"
+      "id": "316303b6-3bf4-4940-a5a9-3400404936f2",
+      "name": "HTTP Request resize1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://pdf-converter:8000/resize",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1100,
+        -480
+      ],
+      "id": "d0391967-1531-4885-9073-423b39e76354",
+      "name": "HTTP Request resize",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "de27b16b-9d4e-4d73-8223-3d3dfb5ffafe",
+              "leftValue": "={{ Object.keys($binary || {}).length > 0 && $json.error === undefined }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1100,
+        480
+      ],
+      "id": "f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c",
+      "name": "Has binary data?2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "35aa7eba-1de6-408e-aea1-f4adcc1247e1",
+              "leftValue": "={{ Object.keys($binary || {}).length > 0 && $json.error === undefined }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1320,
+        -480
+      ],
+      "id": "b88031f5-cc6f-6c63-08ce-cac7812c0c4e",
+      "name": "Has resize output? (PDF)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "56b85cc4-375a-4a5e-b24c-7ba906a53e8d",
+              "name": "receipt_id",
+              "value": "={{ $('Download file').item.json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "d84a445b-ab53-4f98-af55-b63e9d18e0c7",
+              "name": "filename",
+              "value": "={{ $('Download file').item.json.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "92c2051c-482d-484c-adb0-f9f0300d4c91",
+              "name": "error_type",
+              "value": "Resize/convert failed (PDF)",
+              "type": "string"
+            },
+            {
+              "id": "5a5e3bd7-675d-465f-a3d8-591ec2cf9cf6",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || $json.error?.description || 'No binary data returned' }}",
+              "type": "string"
+            },
+            {
+              "id": "c70ec16c-d055-43d3-93bc-1584a0223d40",
+              "name": "raw_output",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "61004283-8b3c-47a2-bdee-5cdd15ab14f4",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "bd8a03ad-1d4d-4c18-8509-511e53ef3f03",
+              "name": "drive_url",
+              "value": "={{ 'https://drive.google.com/file/d/' + ($('Download file').item.json.id || '') + '/view' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1320,
+        -680
+      ],
+      "id": "aa000001-0000-0000-0000-000000000005",
+      "name": "Set resize error (PDF)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "780d3bae-a44f-4b89-b398-8920fe97e202",
+              "name": "receipt_id",
+              "value": "={{ $('Download file1').item.json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "d0e4dc58-01ec-4a91-b5c4-6d4485ec020b",
+              "name": "filename",
+              "value": "={{ $('Download file1').item.json.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "72d70f73-9bef-4bbc-99bf-eca93386adb6",
+              "name": "error_type",
+              "value": "Resize failed (JPG)",
+              "type": "string"
+            },
+            {
+              "id": "78b8fe84-fe12-44d2-a78a-2239d2f44f9d",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || $json.error?.description || 'No binary data returned' }}",
+              "type": "string"
+            },
+            {
+              "id": "5784e64d-f59d-40cf-80b6-34a78c336878",
+              "name": "raw_output",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "c42754ca-fc59-460c-a954-59d40b1623f7",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "0c3552fa-2791-426f-ab72-b1add47fb523",
+              "name": "drive_url",
+              "value": "={{ 'https://drive.google.com/file/d/' + ($('Download file1').item.json.id || '') + '/view' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1100,
+        680
+      ],
+      "id": "aa000001-0000-0000-0000-000000000006",
+      "name": "Set resize error (JPG)"
+    },
+    {
+      "parameters": {
+        "promptType": "=define",
+        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Always output dates in ISO format (YYYY-MM-DD).\n  - The receipt date is the transaction date, typically accompanied by a time (HH:MM). It contains a recognizable day\n  (01–31), month (01–12), and a 4-digit year (e.g. 2024, 2025). Use that date — do not derive or invent a year.\n  - German prices use a comma as decimal separator followed by exactly 2 digits and an optional VAT letter (e.g. '1,09\n   A', '2,30 B', '13,80 A'). These are item prices — never dates. Do not interpret them as dates under any\n  circumstances.\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal: the NETTO (net) amount before tax, always less than or equal to total_amount. Use the printed NETTO\n  value if available; otherwise calculate as total_amount minus tax_amount.                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1. If quantity appears inside the product name (e.g. 'Milk 1L x 12'), extract\n   that number as quantity.\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n  \n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork                                                                                \n  Return the result as JSON matching the provided schema.\n  \n\nThe Drive file ID for this receipt is: {{ $('Download file').item.json.id }}\nYou MUST include this exact string (unchanged) as the top-level \"receipt_id\" field in your JSON output.\n\nIMPORTANT: Output ONLY the raw JSON object. Do NOT wrap it in markdown code blocks (no ```json``` or similar). No explanations, no extra text.",
+        "hasOutputParser": false,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "messageType": "imageBinary",
+              "imageDetail": "high"
+            }
+          ]
+        },
+        "batching": {
+          "batchSize": 1,
+          "delayTime": 1000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1540,
+        -480
+      ],
+      "id": "72bc3b61-23c7-4080-99ae-5ee75d361c0b",
+      "name": "Basic LLM Chain",
+      "retryOnFail": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4-mini"
+        },
+        "options": {
+          "maxTokens": 16384
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1540,
+        -300
+      ],
+      "id": "e28da108-a493-4ede-ad34-cbe3f1f3f134",
+      "name": "OpenAI Chat Model",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "My4Bnh4g8Z04h3cM",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "=define",
+        "text": "=Analyze the attached receipt image and extract structured data.\n\n  IMPORTANT: The total amount is usually prominently displayed. Pay special       \n  attention to the final amount that was actually paid.\n                                                                                  \n  1. RECEIPT_INFO:     \n     - Always output dates in ISO format (YYYY-MM-DD).\n  - The receipt date is the transaction date, typically accompanied by a time (HH:MM). It contains a recognizable day\n  (01–31), month (01–12), and a 4-digit year (e.g. 2024, 2025). Use that date — do not derive or invent a year.\n  - German prices use a comma as decimal separator followed by exactly 2 digits and an optional VAT letter (e.g. '1,09\n   A', '2,30 B', '13,80 A'). These are item prices — never dates. Do not interpret them as dates under any\n  circumstances.\n     - Store name (normalized: REWE, IKEA, ESSO, etc.)                            \n     - Currency (EUR, USD, etc.)\n     - Total amount (the actual amount paid)                                      \n     - Tax amount (if recognizable, otherwise 0)\n     - Subtotal: the NETTO (net) amount before tax, always less than or equal to total_amount. Use the printed NETTO\n  value if available; otherwise calculate as total_amount minus tax_amount.                                                                   \n     - Deposits (Pfand): sum of all deposit charges if present, otherwise 0\n     - Discounts: sum of all discounts or coupons if present, otherwise 0         \n                                                                                  \n  2. INDIVIDUAL ITEMS:                                                            \n     - For each item: name, category, price, quantity                             \n     - Use specific categories in singular English (Food, Beverage, Household,\n  Furniture, etc.)                                                                \n     - If quantity is not specified, assume 1. If quantity appears inside the product name (e.g. 'Milk 1L x 12'), extract\n   that number as quantity.\n     - For items sold by weight: include only the final price paid (e.g., \"Bananas\n   (by weight)\" with the actual paid amount)                                      \n     - Do not include reference prices (per-kilogram) as separate items if a total\n   price for that item also appears                                               \n     - If both per-unit and total price for the same item appear, use only the\n  total\n     - Do not include deposit charges or discounts as items\n     - Translate item names to English if not already in English\n  \n  3. CONFIDENCE SCORE:\n       - Rate your overall confidence in the extraction on a scale of 1 to 5\n       - 5 = all values clearly readable, high certainty\n       - 4 = mostly readable, minor ambiguities\n       - 3 = some values ambiguous (faded print, partial occlusion, unclear\n  handwriting)\n       - 2 = significant parts unclear, multiple guesses made\n       - 1 = image barely readable, extraction largely guesswork                                                                                \n  Return the result as JSON matching the provided schema.\n  \n\nThe Drive file ID for this receipt is: {{ $('Download file1').item.json.id }}\nYou MUST include this exact string (unchanged) as the top-level \"receipt_id\" field in your JSON output.\n\nIMPORTANT: Output ONLY the raw JSON object. Do NOT wrap it in markdown code blocks (no ```json``` or similar). No explanations, no extra text.",
+        "hasOutputParser": false,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "messageType": "imageBinary",
+              "imageDetail": "high"
+            }
+          ]
+        },
+        "batching": {
+          "batchSize": 1,
+          "delayTime": 1000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1320,
+        480
+      ],
+      "id": "c15c2caa-3f5b-4d23-b664-5c086f086dee",
+      "name": "Basic LLM Chain1",
+      "retryOnFail": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4-mini"
+        },
+        "options": {
+          "maxTokens": 16384
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        660
+      ],
+      "id": "041406e2-1342-4486-b4f0-e8fa952d430e",
+      "name": "OpenAI Chat Model1",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "My4Bnh4g8Z04h3cM",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\nlet receiptId = '', filename = '';\ntry {\n  const dlItem = $('Download file').item;\n  receiptId = dlItem?.json?.id   || '';\n  filename  = dlItem?.json?.name || '';\n} catch (e) {\n  // item pairing failed; receipt_id empty but text preserved\n}\nreturn {\n  json: {\n    ...item.json,\n    receipt_id: receiptId,\n    filename:   filename\n  }\n};",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -480
+      ],
+      "id": "bb000001-0000-0000-0000-000000000001",
+      "name": "Add file metadata (PDF)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3fb4d7a3-cc06-41e5-846f-004279e8b359",
+              "name": "receipt_id",
+              "value": "={{ $json.receipt_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "42c66e23-e6f3-46b4-9ecd-8d2bcb90594a",
+              "name": "filename",
+              "value": "={{ $json.filename || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "3bb30d3f-70f5-4841-9126-bb5c1448df1e",
+              "name": "error_type",
+              "value": "LLM parse error (PDF)",
+              "type": "string"
+            },
+            {
+              "id": "f32e0941-cdaa-4527-b479-4fd3a917509c",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || (typeof $json.error === 'string' ? $json.error : JSON.stringify($json.error)) || 'error' }}",
+              "type": "string"
+            },
+            {
+              "id": "2ecc8202-9d4d-40d2-9ea2-160aa192d099",
+              "name": "raw_output",
+              "value": "={{ $json.text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "29ee6169-050b-4682-a4ff-570e2554d61b",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "8affd14e-6f6d-4acb-a85d-c9b148cf4a04",
+              "name": "drive_url",
+              "value": "={{ $json.receipt_id ? 'https://drive.google.com/file/d/' + $json.receipt_id + '/view' : '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        -680
+      ],
+      "id": "aa000001-0000-0000-0000-000000000001",
+      "name": "Set parse error (PDF)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\nlet receiptId = '', filename = '';\ntry {\n  const dlItem = $('Download file1').item;\n  receiptId = dlItem?.json?.id   || '';\n  filename  = dlItem?.json?.name || '';\n} catch (e) {\n  // item pairing failed; receipt_id empty but text preserved\n}\nreturn {\n  json: {\n    ...item.json,\n    receipt_id: receiptId,\n    filename:   filename\n  }\n};",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        480
+      ],
+      "id": "bb000001-0000-0000-0000-000000000003",
+      "name": "Add file metadata (JPG)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "935ca768-0d0f-44b7-8331-7f9bb0c575dc",
+              "name": "receipt_id",
+              "value": "={{ $json.receipt_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "29b91477-d392-46c6-9c93-32fd4c97728c",
+              "name": "filename",
+              "value": "={{ $json.filename || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "5827cd5f-bdf3-4e41-8363-d08f23bc2c17",
+              "name": "error_type",
+              "value": "LLM parse error (JPG)",
+              "type": "string"
+            },
+            {
+              "id": "398f5c42-b4d9-4a61-a6e6-b911deff1732",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || (typeof $json.error === 'string' ? $json.error : JSON.stringify($json.error)) || 'error' }}",
+              "type": "string"
+            },
+            {
+              "id": "980f4e10-8f68-4ca2-81db-6876aa8cacb4",
+              "name": "raw_output",
+              "value": "={{ $json.text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a6c1667f-f2e9-4f47-aa94-680f4efe4c01",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "cdc11af8-fec5-49b5-8190-8f9821549207",
+              "name": "drive_url",
+              "value": "={{ $json.receipt_id ? 'https://drive.google.com/file/d/' + $json.receipt_id + '/view' : '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1540,
+        680
+      ],
+      "id": "aa000001-0000-0000-0000-000000000002",
+      "name": "Set parse error (JPG)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\nconst text = item.json.text || '';\nconst cleaned = text.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  throw new Error('JSON parse failed: ' + e.message);\n}\n// Normalize: items field name variations\nif (parsed && !parsed.items) {\n  parsed.items = parsed.individual_items || parsed.line_items || parsed.products || parsed.purchased_items || [];\n}\nif (!parsed?.receipt_info || !Array.isArray(parsed?.items)) {\n  throw new Error('Schema mismatch: missing receipt_info or items');\n}\n// Normalize: confidence may be at top level instead of inside receipt_info\nconst ri = parsed.receipt_info;\nif (ri.confidence == null) {\n  ri.confidence = ri.confidence_score ?? parsed.confidence ?? parsed.confidence_score ?? 3;\n}\n// Normalize: store field name variations\nri.store = ri.store || ri.store_name || ri.merchant || ri.vendor || ri.retailer || '';\n// Normalize: date field name variations + format (YYYY-MM-DD or DD.MM.YYYY)\nconst rawDate = ri.date || ri.receipt_date || ri.transaction_date || ri.purchase_date || '';\nconst isoMatch = rawDate.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\nconst deMatch  = rawDate.match(/^(\\d{2})\\.(\\d{2})\\.(\\d{4})$/);\nri.date = isoMatch ? `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`\n        : deMatch  ? `${deMatch[3]}-${deMatch[2]}-${deMatch[1]}`\n        : '';\n// Default numeric fields to avoid NaN in downstream Set nodes\nri.tax_amount = ri.tax_amount ?? 0;\nri.subtotal = ri.subtotal ?? 0;\nri.deposits = ri.deposits ?? 0;\nri.discounts = ri.discounts ?? 0;\n// Normalize items: quantity 0/null/fraction(<1) -> 1\nparsed.items = parsed.items.map(it => {\n  const qty = Number(it.quantity);\n  return { ...it, quantity: (Number.isFinite(qty) && qty >= 1) ? qty : 1 };\n});\nconst receiptId = parsed.receipt_id || item.json.receipt_id || '';\ndelete parsed.receipt_id;\nreturn { json: { output: parsed, text: text, receipt_id: receiptId, filename: item.json.filename } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        -480
+      ],
+      "id": "bb000001-0000-0000-0000-000000000002",
+      "name": "Parse LLM output (PDF)",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\nconst text = item.json.text || '';\nconst cleaned = text.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  throw new Error('JSON parse failed: ' + e.message);\n}\n// Normalize: items field name variations\nif (parsed && !parsed.items) {\n  parsed.items = parsed.individual_items || parsed.line_items || parsed.products || parsed.purchased_items || [];\n}\nif (!parsed?.receipt_info || !Array.isArray(parsed?.items)) {\n  throw new Error('Schema mismatch: missing receipt_info or items');\n}\n// Normalize: confidence may be at top level instead of inside receipt_info\nconst ri = parsed.receipt_info;\nif (ri.confidence == null) {\n  ri.confidence = ri.confidence_score ?? parsed.confidence ?? parsed.confidence_score ?? 3;\n}\n// Normalize: store field name variations\nri.store = ri.store || ri.store_name || ri.merchant || ri.vendor || ri.retailer || '';\n// Normalize: date field name variations + format (YYYY-MM-DD or DD.MM.YYYY)\nconst rawDate = ri.date || ri.receipt_date || ri.transaction_date || ri.purchase_date || '';\nconst isoMatch = rawDate.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\nconst deMatch  = rawDate.match(/^(\\d{2})\\.(\\d{2})\\.(\\d{4})$/);\nri.date = isoMatch ? `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`\n        : deMatch  ? `${deMatch[3]}-${deMatch[2]}-${deMatch[1]}`\n        : '';\n// Default numeric fields to avoid NaN in downstream Set nodes\nri.tax_amount = ri.tax_amount ?? 0;\nri.subtotal = ri.subtotal ?? 0;\nri.deposits = ri.deposits ?? 0;\nri.discounts = ri.discounts ?? 0;\n// Normalize items: quantity 0/null/fraction(<1) -> 1\nparsed.items = parsed.items.map(it => {\n  const qty = Number(it.quantity);\n  return { ...it, quantity: (Number.isFinite(qty) && qty >= 1) ? qty : 1 };\n});\nconst receiptId = parsed.receipt_id || item.json.receipt_id || '';\ndelete parsed.receipt_id;\nreturn { json: { output: parsed, text: text, receipt_id: receiptId, filename: item.json.filename } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        480
+      ],
+      "id": "bb000001-0000-0000-0000-000000000004",
+      "name": "Parse LLM output (JPG)",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -393,13 +904,13 @@
             {
               "id": "c7deabdc-f194-4f18-ad73-55192dfefe4f",
               "name": "receipt_id",
-              "value": "={{ $('Google Drive Trigger').item.json.id }}",
+              "value": "={{ $json.receipt_id }}",
               "type": "string"
             },
             {
               "id": "f08f2266-38a4-4394-aeef-4b3843aeb98a",
               "name": "date",
-              "value": "={{ DateTime.fromISO($json.output.receipt_info.date).toFormat('dd.MM.yyyy') }}",
+              "value": "={{ $json.output.receipt_info.date ? DateTime.fromISO($json.output.receipt_info.date).toFormat('dd.MM.yyyy') : '' }}",
               "type": "string"
             },
             {
@@ -445,7 +956,7 @@
               "type": "number"
             },
             {
-              "id": "bf1410aa-83ed-44ab-9f01-fe978a59a6e7",
+              "id": "ad53b6bb-dd03-4c3c-930a-333fccf4b46f",
               "name": "confidence",
               "value": "={{ Number($json.output.receipt_info.confidence) }}",
               "type": "number"
@@ -457,11 +968,118 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1328,
-        352
+        2200,
+        -480
       ],
-      "id": "0c84e7ee-b143-4356-8e37-b5cc5fbc555a",
+      "id": "06849faa-fa2a-410e-ab35-017d685991ca",
       "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=output.items",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2200,
+        -660
+      ],
+      "id": "dbf2943e-cda4-42ce-8a9d-121de4525961",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c7deabdc-f194-4f18-ad73-55192dfefe4f",
+              "name": "receipt_id",
+              "value": "={{ $json.receipt_id }}",
+              "type": "string"
+            },
+            {
+              "id": "f08f2266-38a4-4394-aeef-4b3843aeb98a",
+              "name": "date",
+              "value": "={{ $json.output.receipt_info.date ? DateTime.fromISO($json.output.receipt_info.date).toFormat('dd.MM.yyyy') : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "7c62bb5c-03cf-4a0d-9c52-262648c16486",
+              "name": "store",
+              "value": "={{ $json.output.receipt_info.store }}",
+              "type": "string"
+            },
+            {
+              "id": "a76ab2f2-29db-4cd0-9ba8-2ec38f66ed56",
+              "name": "currency",
+              "value": "={{ $json.output.receipt_info.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "a7ff4ff1-a50f-4f82-9504-19b386bd4c72",
+              "name": "total_amount",
+              "value": "={{ Number($json.output.receipt_info.total_amount) }}",
+              "type": "number"
+            },
+            {
+              "id": "7d3e559a-c11d-4b7c-bcb0-0c20d5d44c79",
+              "name": "tax_amount",
+              "value": "={{ Number($json.output.receipt_info.tax_amount) }}",
+              "type": "number"
+            },
+            {
+              "id": "56baf7a2-a02c-441f-a245-55f63027fe34",
+              "name": "subtotal",
+              "value": "={{ Number($json.output.receipt_info.subtotal) }}",
+              "type": "number"
+            },
+            {
+              "id": "0f150278-f4d5-44cd-871c-427a0e8269c3",
+              "name": "deposits",
+              "value": "={{ Number($json.output.receipt_info.deposits) }}",
+              "type": "number"
+            },
+            {
+              "id": "244706af-bd07-4006-9329-3e258af04e36",
+              "name": "discounts",
+              "value": "={{ Number($json.output.receipt_info.discounts) }}",
+              "type": "number"
+            },
+            {
+              "id": "ad53b6bb-dd03-4c3c-930a-333fccf4b46f",
+              "name": "confidence",
+              "value": "={{ Number($json.output.receipt_info.confidence) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1980,
+        480
+      ],
+      "id": "16e5a81f-bca2-4e2f-93ac-a85b9828cb08",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=output.items",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        300
+      ],
+      "id": "4039d44e-13c1-41e3-9bb2-4bf99cc08cfc",
+      "name": "Split Out1"
     },
     {
       "parameters": {
@@ -470,7 +1088,7 @@
             {
               "id": "ce43264a-38d1-447a-8431-7ef66a36665e",
               "name": "receipt_id",
-              "value": "={{ $('Google Drive Trigger').item.json.id }}",
+              "value": "={{ $json.receipt_id }}",
               "type": "string"
             },
             {
@@ -504,43 +1122,274 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1328,
-        112
+        2420,
+        -660
       ],
-      "id": "64b1162f-883f-43d7-aed3-bde4da2f76ee",
+      "id": "d53918fc-a068-4cf7-91e4-7d1f4ca9152e",
       "name": "Edit Fields1"
     },
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ce43264a-38d1-447a-8431-7ef66a36665e",
+              "name": "receipt_id",
+              "value": "={{ $json.receipt_id }}",
+              "type": "string"
+            },
+            {
+              "id": "f06a3d00-f85c-475f-8b32-d3f3ffad1783",
+              "name": "category",
+              "value": "={{ $json[\"output.items\"].category }}",
+              "type": "string"
+            },
+            {
+              "id": "124a9910-f884-4e6f-9366-bb8bfaa60347",
+              "name": "name",
+              "value": "={{ $json[\"output.items\"].name }}",
+              "type": "string"
+            },
+            {
+              "id": "a6ec8e33-32a9-46fb-bcff-5489a971f9a5",
+              "name": "price",
+              "value": "={{ Number($json[\"output.items\"].price) }}",
+              "type": "number"
+            },
+            {
+              "id": "af74044c-1e83-41fa-96c1-850f2758e4e8",
+              "name": "quantity",
+              "value": "={{ $json[\"output.items\"].quantity }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        1248,
-        624
+        2200,
+        300
       ],
-      "id": "6b9774dd-c173-41e4-b3a9-198c08a1d96d",
-      "name": "Stop and Error"
+      "id": "ed3b2da5-fe67-44bb-b294-26fee0fdc92b",
+      "name": "Edit Fields3"
     },
     {
       "parameters": {
-        "sendTo": "={{ $env.N8N_NOTIFICATION_EMAIL }}",
-        "subject": "=Receipt processing failed: {{ $('Google Drive Trigger').item.json.name }}",
-        "message": "=The following receipt could not be processed and needs manual review:<br><br>   File: {{ $('Google Drive Trigger').item.json.name }}<br>   ID: {{ $('Google Drive Trigger').item.json.id }}<br><br>   Error: {{ $json.error.message }}",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_GESAMTPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_GESAMTPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_GESAMTPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {}
       },
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.2,
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
       "position": [
-        1424,
-        560
+        2420,
+        -480
       ],
-      "id": "db01f6bf-0557-47b2-a242-c919e9ac7a60",
-      "name": "Send a message1",
-      "webhookId": "c670bece-f5c7-4149-a86f-4d394ba5bfc0",
+      "id": "a5fed2d0-ff6c-4612-aeab-63f24820fe76",
+      "name": "Append receipt in sheet",
       "credentials": {
-        "gmailOAuth2": {
-          "id": "PNyXeGOIJ66dAoLf",
-          "name": "Gmail account"
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_EINZELPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_EINZELPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_EINZELPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2640,
+        -660
+      ],
+      "id": "a9e017d0-9af2-4b0b-ad8b-19ae80fefdba",
+      "name": "Append items in sheet",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_GESAMTPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_GESAMTPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_GESAMTPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2200,
+        480
+      ],
+      "id": "2ec1244d-53c7-4ffd-86b3-45b0da6e19ff",
+      "name": "Append receipt in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_EINZELPOSTEN_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_EINZELPOSTEN_GID",
+          "cachedResultUrl": "N8N_SHEET_EINZELPOSTEN_GID"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2420,
+        300
+      ],
+      "id": "e3274d51-60b4-4363-ada9-291bab90458b",
+      "name": "Append items in sheet1",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_RECHNUNGEN_ID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_RECHNUNGEN_ID",
+          "cachedResultUrl": "N8N_SHEET_RECHNUNGEN_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.N8N_SHEET_ERRORS_GID }}",
+          "mode": "list",
+          "cachedResultName": "N8N_SHEET_ERRORS_GID",
+          "cachedResultUrl": "N8N_SHEET_ERRORS_GID"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2640,
+        700
+      ],
+      "id": "aa000001-0000-0000-0000-000000000007",
+      "name": "Append to errors sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8GzJQm91xR4OBFgu",
+          "name": "Google Sheets account"
         }
       }
     }
@@ -550,7 +1399,25 @@
       "main": [
         [
           {
+            "node": "If PDF meta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If PDF meta?": {
+      "main": [
+        [
+          {
             "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download file1",
             "type": "main",
             "index": 0
           }
@@ -561,14 +1428,123 @@
       "main": [
         [
           {
-            "node": "If",
+            "node": "Has binary data?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file1": {
+      "main": [
+        [
+          {
+            "node": "Has binary data?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has binary data?": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Stop and Error | Download",
+            "node": "Set download error (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has binary data?1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request resize1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set download error (JPG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request resize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request resize": {
+      "main": [
+        [
+          {
+            "node": "Has resize output? (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has resize output? (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set resize error (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request resize1": {
+      "main": [
+        [
+          {
+            "node": "Has binary data?2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has binary data?2": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set resize error (JPG)",
             "type": "main",
             "index": 0
           }
@@ -586,7 +1562,76 @@
         ]
       ]
     },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Add file metadata (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set parse error (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Add file metadata (JPG)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set parse error (JPG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add file metadata (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM output (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add file metadata (JPG)": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM output (JPG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM output (PDF)": {
       "main": [
         [
           {
@@ -602,79 +1647,30 @@
         ],
         [
           {
-            "node": "Stop and Error",
+            "node": "Set parse error (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM output (JPG)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Send a message1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Structured Output Parser": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Basic LLM Chain",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split Out": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Append items in sheet": {
-      "main": [
-        []
-      ]
-    },
-    "Append receipt in sheet": {
-      "main": [
-        [
-          {
-            "node": "Send a message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If": {
-      "main": [
-        [
-          {
-            "node": "Basic LLM Chain",
+            "node": "Split Out1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "HTTP Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTTP Request": {
-      "main": [
-        [
-          {
-            "node": "Basic LLM Chain",
+            "node": "Set parse error (JPG)",
             "type": "main",
             "index": 0
           }
@@ -692,11 +1688,121 @@
         ]
       ]
     },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Edit Fields1": {
       "main": [
         [
           {
             "node": "Append items in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Append receipt in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Append items in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set parse error (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Append to errors sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set parse error (JPG)": {
+      "main": [
+        [
+          {
+            "node": "Append to errors sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set download error (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Append to errors sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set download error (JPG)": {
+      "main": [
+        [
+          {
+            "node": "Append to errors sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set resize error (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Append to errors sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set resize error (JPG)": {
+      "main": [
+        [
+          {
+            "node": "Append to errors sheet",
             "type": "main",
             "index": 0
           }
@@ -709,7 +1815,8 @@
     "callerPolicy": "workflowsFromSameOwner",
     "errorWorkflow": "m3o1XJMOIOViwm9v",
     "availableInMCP": false,
-    "timeSavedMode": "fixed"
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Berlin"
   },
   "staticData": {
     "node:Google Drive Trigger": {
@@ -720,9 +1827,9 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "6071f1f9-6e79-4a34-a590-5d91b085a5f4",
-  "activeVersionId": "fb5224a4-6805-475d-ac5b-27463a3fa9ed",
-  "versionCounter": 71,
+  "versionId": "8e1239ae-870d-4be8-b3ca-d4d9785f1149",
+  "activeVersionId": "5adcc2e2-3b85-43a9-8a83-c8563fbb6efd",
+  "versionCounter": 72,
   "triggerCount": 1,
   "tags": []
 }

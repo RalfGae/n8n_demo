@@ -26,13 +26,15 @@ Legend: ✅ Done · 🔄 Open · ❌ Cancelled
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Sync Non-Bulk WF to current standard | ✅ | maxTokens 4096→16384, model gpt-4.1-mini→gpt-5.4-mini (WF: QOlE6hpQyNm2RUIj). Architecture (Structured Output Parser + receipt_id via Drive Trigger) stays unchanged. |
+| Sync Non-Bulk WF to current standard | ✅ | Full rebuild to v1.3 based on Bulk WF: correct PDF/JPG branching, resize step, binary validation, Code nodes (no Structured Output Parser), receipt_id via prompt, error sheet. Drive Trigger kept as entry point (WF: QOlE6hpQyNm2RUIj). |
 | Normalize discount/deposit sign | 🔄 | Model sometimes returns negative values for `discounts` and `deposits` (as printed on receipt). Decide convention and add `Math.abs()` normalization in Parse LLM output if positive-only is preferred. |
 | Validator as Code Node | 🔄 | Rule: `subtotal + deposits - discounts == total_amount`. On mismatch: log or trigger error handler. Currently no validation in pipeline. |
 | Consolidate legacy validators | 🔄 | `price_validator.py` and `receipt_price_check.py` are redundant. One has quantity support, the other does not. Delete once Code Node is in place. |
 | Fix store matching | 🔄 | `get_store_tolerance('Rewe GmbH')` does not match `'REWE'`. Replace exact match with normalized substring match. |
 | Clean up legacy scripts | 🔄 | `enhance_image*.py` (5 files) and `analyze_receipt_accuracy.py` unused since Tesseract era. `analyze_receipt_accuracy.py` also crashes (missing `datetime` import). |
 | Workflow Testing Skill | 🔄 | Claude Code skill for targeted re-testing of individual receipts via Non-Bulk WF: load anomalies from GSheet, trigger by Drive file ID, compare output against expected values, suggest prompt/workflow fixes. Prerequisite: Non-Bulk WF stable + n8n API trigger clarified. |
+| Fix PDF mimeType filter in Non-Bulk WF | 🔄 | IF-PDF condition uses `mimeType === 'application/pdf' \|\| name.endsWith('.pdf')` — the OR clause lets text files with .pdf extension through (e.g. QR code receipts that are just a URL). Change to strict `mimeType === 'application/pdf'` only. WF: QOlE6hpQyNm2RUIj. |
+| Harden date extraction prompt | 🔄 | Model picks wrong date from receipt when multiple dates are present (e.g. product labels, expiry, certification timestamps). Observed: Markt-Bäckerei 2026-05-23 extracted as 2023-11-09 — likely latched onto a `DD.MM.YY` date elsewhere on the document. Fix: instruct model explicitly to use the transaction/receipt date (Bondatum/Kassendatum/top-of-receipt timestamp), not other dates. |
 
 ### Known data anomalies (manual review)
 
