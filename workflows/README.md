@@ -1,42 +1,42 @@
 # Workflows
 
-Sanitisierte n8n-Workflow-Exports. Sensible Werte (Folder-IDs, Sheet-IDs, E-Mail-Adressen)
-sind durch `={{ $env.VAR_NAME }}` Expressions ersetzt — n8n löst diese zur Laufzeit auf.
+Sanitized n8n workflow exports. Sensitive values (folder IDs, sheet IDs, email addresses)
+are replaced with `={{ $env.VAR_NAME }}` expressions — n8n resolves these at runtime.
 
-Rohe Exports (`*_raw.json`) enthalten echte Werte und sind via `.gitignore` vom Commit ausgeschlossen.
+Raw exports (`*_raw.json`) contain real values and are excluded from commits via `.gitignore`.
 
-## Entwicklungsworkflow
+## Development workflow
 
-1. Änderungen in der n8n-UI machen
-2. `./utils/export_workflows.sh` ausführen
-   → erzeugt `workflows/<name>_raw.json` (roh, gitignored) und `workflows/<name>.json` (sanitisiert)
-3. `git diff workflows/*.json` prüfen — nur die sanitisierten Dateien sollten Änderungen zeigen
-4. Nur die sanitisierten Dateien committen (die `_raw.json` sind automatisch ausgeschlossen)
+1. Make changes in the n8n UI
+2. Run `./utils/export_workflows.sh`
+   → produces `workflows/<name>_raw.json` (raw, gitignored) and `workflows/<name>.json` (sanitized)
+3. Check `git diff workflows/*.json` — only the sanitized files should show changes
+4. Commit only the sanitized files (`_raw.json` files are excluded automatically)
 
-## Setup in neuer Umgebung
+## Setup in a new environment
 
 ```bash
-# 1. Mapping-Datei anlegen
+# 1. Create the mapping file
 cp utils/workflow_var_mapping.example.json utils/workflow_var_mapping.json
-# → Werte in workflow_var_mapping.json eintragen (Folder-IDs, Sheet-IDs etc.)
+# → Fill in the values in workflow_var_mapping.json (folder IDs, sheet IDs, etc.)
 
-# 2. .env anlegen
+# 2. Create .env
 cp .env.example .env
-# → API-Keys und die N8N_*-Variablen in .env eintragen
+# → Fill in API keys and N8N_* variables in .env
 
-# 3. Container starten
+# 3. Start the container
 docker compose up -d
 
-# 4. Workflow importieren
+# 4. Import a workflow
 ./utils/import_workflow.sh workflows/receipt_processor_v1_baseline.json
 ```
 
-Nach dem Import müssen Credentials in der n8n-UI manuell gemappt werden:
+After import, credentials must be mapped manually in the n8n UI:
 Google Drive, OpenAI, Gmail, Google Sheets.
 
-## Dateien
+## Files
 
-| Datei | Status | Inhalt |
+| File | Status | Contents |
 |---|---|---|
-| `*_raw.json` | gitignored | Original-Export mit echten Werten |
-| `*.json` (ohne `_raw`) | committed | Sanitisierter Export mit `$env`-Expressions |
+| `*_raw.json` | gitignored | Original export with real values |
+| `*.json` (without `_raw`) | committed | Sanitized export with `$env` expressions |
